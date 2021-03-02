@@ -1,0 +1,55 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE log4j:configuration SYSTEM 
+          "https://logging.apache.org/log4j/1.2/apidocs/org/apache/log4j/xml/doc-files/log4j.dtd">
+<log4j:configuration xmlns:log4j="http://jakarta.apache.org/log4j/">
+    <appender name="STDOUT_DEBUG" class="org.apache.log4j.ConsoleAppender">
+        <param name="threshold" value="debug"/>
+        <layout class="org.apache.log4j.PatternLayout">
+            <param name="ConversionPattern" value="%5p [%t] (%d{dd MMM yyyy HH:mm:ss}) (%F:%L) - %m%n"/>
+        </layout>
+        <filter class="org.apache.log4j.varia.LevelRangeFilter">
+       		<param name="levelMin" value="debug" />
+        	<param name="levelMax" value="debug" />
+        </filter>
+    </appender>
+    <appender name="STDOUT_INFO" class="org.apache.log4j.ConsoleAppender">
+        <param name="threshold" value="info"/>
+        <layout class="org.apache.log4j.PatternLayout">
+            <param name="ConversionPattern" value="[*] %m%n"/>
+        </layout>
+        <filter class="org.apache.log4j.varia.LevelRangeFilter">
+       		<param name="levelMin" value="info" />
+        	<param name="levelMax" value="info" />
+        </filter>
+    </appender>
+    <appender name="STDOUT_WARN" class="org.apache.log4j.ConsoleAppender">
+        <param name="threshold" value="warn"/>
+        <layout class="org.apache.log4j.PatternLayout">
+            <param name="ConversionPattern" value="[!] %m%n"/>
+        </layout>
+        <filter class="org.apache.log4j.varia.LevelRangeFilter">
+       		<param name="levelMin" value="warn" />
+        	<param name="levelMax" value="warn" />
+        </filter>
+    </appender>
+    <appender name="STDOUT_ERR" class="org.apache.log4j.ConsoleAppender">
+        <param name="threshold" value="error"/>
+        <layout class="org.apache.log4j.PatternLayout">
+            <param name="ConversionPattern" value="[!] %5p %m%n"/>
+        </layout>
+        <filter class="org.apache.log4j.varia.LevelRangeFilter">
+			<param name="levelMin" value="error" />
+			<param name="levelMax" value="error" />
+        </filter>
+    </appender>
+    <logger name="lu.uni.trux.jucify" additivity="false">
+        <level value="OFF"/>
+        <appender-ref ref="STDOUT_DEBUG"/>
+        <appender-ref ref="STDOUT_INFO"/>
+        <appender-ref ref="STDOUT_WARN"/>
+        <appender-ref ref="STDOUT_ERR"/>
+    </logger>
+    <root>
+        <level value="OFF"/>
+    </root>
+</log4j:configuration>
