@@ -1,4 +1,4 @@
 sootOutput
 .settings/
 target
-test
+tests
