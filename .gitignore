@@ -2,3 +2,4 @@ sootOutput
 .settings/
 target
 tests
+*.DS_Store
