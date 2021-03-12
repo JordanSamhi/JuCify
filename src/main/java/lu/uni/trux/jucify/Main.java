@@ -1,5 +1,9 @@
 package lu.uni.trux.jucify;
 
+import java.util.List;
+
+import org.javatuples.Pair;
+
 import lu.uni.trux.jucify.callgraph.CallGraphPatcher;
 import lu.uni.trux.jucify.utils.CommandLineOptions;
 import soot.Scene;
@@ -37,8 +41,8 @@ public class Main {
 	public static void main(String[] args) throws Throwable {
 		CommandLineOptions options = new CommandLineOptions(args);
 		String apk = options.getApk(),
-			   platforms = options.getPlatforms(),
-			   dotFile = options.getDot();
+			   platforms = options.getPlatforms();
+		List<Pair<String, String>> files = options.getFiles();
 		InfoflowAndroidConfiguration ifac = new InfoflowAndroidConfiguration();
 		ifac.getAnalysisFileConfig().setAndroidPlatformDir(platforms);
 		ifac.getAnalysisFileConfig().setTargetAPKFile(apk);
@@ -46,9 +50,9 @@ public class Main {
 		sa.constructCallgraph();
 		CallGraph cg = Scene.v().getCallGraph();
 		
-		System.out.println(String.format("Loading %s...", dotFile));
+		System.out.println("Loading files...");
 		CallGraphPatcher cgp = new CallGraphPatcher(cg);
-		cgp.importBinaryCallGraph(dotFile);
+		cgp.importBinaryCallGraph(files);
 		System.out.println("Binary callgraph imported.");
 		
 		if(options.hasExportCallGraph()) {

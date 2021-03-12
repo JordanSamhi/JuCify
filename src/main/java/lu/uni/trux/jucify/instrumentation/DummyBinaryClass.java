@@ -2,6 +2,7 @@ package lu.uni.trux.jucify.instrumentation;
 
 import java.lang.reflect.Modifier;
 import java.util.ArrayList;
+import java.util.List;
 
 import lu.uni.trux.jucify.utils.Constants;
 import lu.uni.trux.jucify.utils.Utils;
@@ -82,9 +83,9 @@ public class DummyBinaryClass {
 		this.clazz.addMethod(sm);
 	}
 	
-	public SootMethod addCMethod(String s) {
-		SootMethod sm = new SootMethod(s,
-				new ArrayList<Type>(), VoidType.v(), Modifier.PUBLIC);
+	public SootMethod addBinaryMethod(String name, Type t, int modifiers, List<Type> params) {
+		SootMethod sm = new SootMethod(name,
+				params, t, Modifier.PUBLIC);
 		JimpleBody body = Jimple.v().newBody(sm);
 		sm.setActiveBody(body);
 		UnitPatchingChain units = body.getUnits();
