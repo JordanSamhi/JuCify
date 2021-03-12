@@ -1,5 +1,10 @@
 package lu.uni.trux.jucify.utils;
 
+import java.util.HashMap;
+import java.util.Map;
+
+import org.javatuples.Pair;
+
 import soot.Body;
 import soot.Local;
 import soot.PatchingChain;
@@ -38,8 +43,9 @@ import soot.jimple.ReturnVoidStmt;
  */
 
 public class Utils {
-	
+
 	private static int localNum = 0;
+	private static Map<String, String> compactTypesToJimpleTypes = null;
 
 	public static String removeNodePrefix(String s) {
 		if(s.startsWith(Constants.NODE_PREFIX)) {
@@ -47,21 +53,21 @@ public class Utils {
 		}
 		return s;
 	}
-	
+
 	public static Local addLocalToBody(Body b, Type t) {
 		Local l = Jimple.v().newLocal(getNextLocalName(), t);
 		b.getLocals().add(l);
 		return l;
 	}
-	
+
 	private static String getNextLocalName() {
 		return "loc"  + localNum++;
 	}
-	
+
 	public static SootMethodRef getMethodRef(String className, String methodName) {
 		return Scene.v().getSootClass(className).getMethod(methodName).makeRef();
 	}
-	
+
 	public static Unit addMethodCall(SootMethod caller, SootMethod callee) {
 		Body b = caller.retrieveActiveBody();
 		final PatchingChain<Unit> units = b.getUnits();
@@ -79,5 +85,49 @@ public class Utils {
 		}
 		return null;
 	}
-	
+
+	public static Pair<String, String> compactSigtoJimpleSig(String sig) {
+		String[] split = sig.split("\\)");
+		String ret = split[1];
+		String[] splitSplit = split[0].split("\\(");
+		String params = null;
+		String currentType = null;
+		StringBuilder sb = new StringBuilder();
+		sb.append("(");
+		if(splitSplit.length != 0) {
+			params = splitSplit[1];
+			String[] splitParams = params.split(" ");
+			for(int i = 0 ; i < splitParams.length ; i++) {
+				currentType = splitParams[i];
+				sb.append(getCompactTypesToJimpleTypes(currentType));
+				if(i != splitParams.length - 1) {
+					sb.append(",");
+				}
+			}
+		}
+		sb.append(")");
+		ret = getCompactTypesToJimpleTypes(ret);
+		return new Pair<String, String>(sb.toString(), ret);
+	}
+
+	private static String getCompactTypesToJimpleTypes(String key) {
+		if(compactTypesToJimpleTypes == null) {
+			compactTypesToJimpleTypes = new HashMap<String, String>();
+			compactTypesToJimpleTypes.put("V", "void");
+			compactTypesToJimpleTypes.put("Z", "boolean");
+			compactTypesToJimpleTypes.put("B", "byte");
+			compactTypesToJimpleTypes.put("C", "char");
+			compactTypesToJimpleTypes.put("S", "short");
+			compactTypesToJimpleTypes.put("I", "int");
+			compactTypesToJimpleTypes.put("J", "long");
+			compactTypesToJimpleTypes.put("F", "float");
+			compactTypesToJimpleTypes.put("D", "double");
+		}
+		if(key.startsWith("L")) {
+			return key.substring(1, key.length() - 1).replace("/", ".");
+		}else if(key.startsWith("[")) {
+			return String.format("%s[]", key.substring(1));
+		}
+		return compactTypesToJimpleTypes.get(key);
+	}
 }
