@@ -1,5 +1,8 @@
 #!/bin/bash
 
+BLUE="\033[0;36m"
+END="\033[0;0m"
+
 end_program () {
     echo "[!] $1"
     echo "End of program."
@@ -7,7 +10,7 @@ end_program () {
 }
 
 print_info () {
-    echo "[*] $1"
+    echo -e "${BLUE}[*] $1${END}"
 }
 
 check_return () {

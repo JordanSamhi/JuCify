@@ -2,11 +2,12 @@
 
 . ./common.sh --source-only
 
-while getopts f: option
+while getopts f:p: option
 do
     case "${option}"
         in
         f) APK_PATH=${OPTARG};;
+        p) PLATFORMS_PATH=${OPTARG};;
     esac
 done
 
@@ -14,6 +15,12 @@ if [ -z "$APK_PATH" ]
 then
     echo
     read -p "APK path: " APK_PATH
+fi
+
+if [ -z "$PLATFORMS_PATH" ]
+then
+    echo
+    read -p "Platforms path: " PLATFORMS_PATH
 fi
 
 APK_BASENAME=$(basename $APK_PATH .apk)
@@ -39,10 +46,9 @@ do
         if [[ $bnamef = $bname* ]]
         then
             python3 process_binary_callgraph.py -d $f -e $efile -w $APK_DIRNAME/$APK_BASENAME/$bname.callgraph
-            echo $efile
             CALLGRAPHS_PATHS+=$(pwd)/$APK_DIRNAME/$APK_BASENAME/$bname.callgraph":"$(pwd)/$(dirname $efile)/$(basename $efile .entrypoints)"|"
         fi
     done
 done
 
-echo $CALLGRAPHS_PATHS
+java -jar ../target/JuCify-0.1-jar-with-dependencies.jar -a $APK_PATH -p $PLATFORMS_PATH -f $CALLGRAPHS_PATHS -ta
