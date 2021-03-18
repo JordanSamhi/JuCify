@@ -22,10 +22,8 @@ import lu.uni.trux.jucify.utils.Constants;
 import lu.uni.trux.jucify.utils.CustomPrints;
 import lu.uni.trux.jucify.utils.Utils;
 import soot.Body;
-import soot.IntType;
 import soot.Local;
 import soot.Modifier;
-import soot.PatchingChain;
 import soot.RefType;
 import soot.Scene;
 import soot.SootClass;
@@ -37,8 +35,6 @@ import soot.VoidType;
 import soot.javaToJimple.LocalGenerator;
 import soot.jimple.AssignStmt;
 import soot.jimple.IdentityStmt;
-import soot.jimple.IfStmt;
-import soot.jimple.IntConstant;
 import soot.jimple.InvokeExpr;
 import soot.jimple.InvokeStmt;
 import soot.jimple.Jimple;
@@ -50,11 +46,9 @@ import soot.util.dot.DotGraph;
 public class CallGraphPatcher {
 
 	private CallGraph cg;
-	private int opaquePredicateCount;
 
 	public CallGraphPatcher(CallGraph cg) {
 		this.cg = cg;
-		this.opaquePredicateCount = 0;
 	}
 
 	public void importBinaryCallGraph(List<Pair<String, String>> files) {
@@ -242,14 +236,7 @@ public class CallGraphPatcher {
 								if(!ret.equals(VoidType.v())) {
 									// FIX MULTIPLE RETURN OF SAME TYPE (OPAQUE PREDICATE)
 									final Local retLoc = local;
-									final PatchingChain<Unit> units = b.getUnits();
-									Unit last = units.getLast();
-									Local opaquePredicateLocal = checkOpaquePredicateLocalExistence(b);
-									IfStmt ifStmt = Jimple.v().newIfStmt(Jimple.v().newEqExpr(opaquePredicateLocal, IntConstant.v(opaquePredicateCount++)), last);
-									units.insertBefore(ifStmt, last);
-									ifStmt.setTarget(last);
-									units.insertAfter(Jimple.v().newReturnStmt(retLoc), ifStmt);
-									b.validate();
+									DummyBinaryClass.v().addOpaquePredicateToLastReturnStmt(b, retLoc);
 								}
 							}
 						}
@@ -312,17 +299,6 @@ public class CallGraphPatcher {
 		Pair<List<Unit>, Stmt> p1 = new Pair<List<Unit>, Stmt>(unitsToAdd, stmt);
 		Pair<Local, Pair<List<Unit>, Stmt>> p2 = new Pair<Local, Pair<List<Unit>, Stmt>>(local, p1);
 		return p2;
-	}
-
-	private Local checkOpaquePredicateLocalExistence(Body b) {
-		for(Local l: b.getLocals()) {
-			if(l.getType().equals(IntType.v()) && l.getName().equals(Constants.OPAQUE_PREDICATE_LOCAL)) {
-				return l;
-			}
-		}
-		Local loc = Jimple.v().newLocal(Constants.OPAQUE_PREDICATE_LOCAL, IntType.v());
-		b.getLocals().add(loc);
-		return loc;
 	}
 
 	public void dotifyCallGraph(String destination) {
