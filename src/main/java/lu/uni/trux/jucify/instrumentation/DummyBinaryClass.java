@@ -14,8 +14,10 @@ import soot.SootMethod;
 import soot.Type;
 import soot.UnitPatchingChain;
 import soot.VoidType;
+import soot.javaToJimple.LocalGenerator;
 import soot.jimple.Jimple;
 import soot.jimple.JimpleBody;
+import soot.jimple.Stmt;
 
 /*-
  * #%L
@@ -71,9 +73,10 @@ public class DummyBinaryClass {
 		SootMethod sm = new SootMethod(Constants.INIT,
 				new ArrayList<Type>(), VoidType.v(), Modifier.PUBLIC);
 		JimpleBody body = Jimple.v().newBody(sm);
+		LocalGenerator lg = new LocalGenerator(body);
 		sm.setActiveBody(body);
 		UnitPatchingChain units = body.getUnits();
-		Local thisLocal = Utils.addLocalToBody(body, RefType.v(Constants.DUMMY_BINARY_CLASS));
+		Local thisLocal = lg.generateLocal(RefType.v(Constants.DUMMY_BINARY_CLASS));
 		units.add(Jimple.v().newIdentityStmt(thisLocal, Jimple.v().newThisRef(RefType.v(Constants.DUMMY_BINARY_CLASS))));
 		units.add(Jimple.v().newInvokeStmt(
 				Jimple.v().newSpecialInvokeExpr(thisLocal,
@@ -87,11 +90,23 @@ public class DummyBinaryClass {
 		SootMethod sm = new SootMethod(name,
 				params, t, Modifier.PUBLIC);
 		JimpleBody body = Jimple.v().newBody(sm);
+		LocalGenerator lg = new LocalGenerator(body);
 		sm.setActiveBody(body);
 		UnitPatchingChain units = body.getUnits();
-		Local thisLocal = Utils.addLocalToBody(body, RefType.v(Constants.DUMMY_BINARY_CLASS));
+		Local thisLocal = lg.generateLocal(RefType.v(Constants.DUMMY_BINARY_CLASS));
 		units.add(Jimple.v().newIdentityStmt(thisLocal, Jimple.v().newThisRef(RefType.v(Constants.DUMMY_BINARY_CLASS))));
-		units.add(Jimple.v().newReturnVoidStmt());
+		Local l = null;
+		for(Type type: params) {
+			l = lg.generateLocal(type);
+			units.add(Jimple.v().newIdentityStmt(l, Jimple.v().newParameterRef(type, params.indexOf(type))));
+		}
+		Stmt ret = null;
+		if(t.equals(VoidType.v())) {
+			ret = Jimple.v().newReturnVoidStmt();
+		}else {
+			ret = Jimple.v().newReturnStmt(lg.generateLocal(t));
+		}
+		units.add(ret);
 		body.validate();
 		this.clazz.addMethod(sm);
 		return sm;

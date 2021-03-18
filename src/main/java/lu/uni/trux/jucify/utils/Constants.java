@@ -36,6 +36,10 @@ public class Constants {
 	public static final String INIT = "<init>";
 	public static final String GRAPH_NAME = "Graph Name";
 	public static final String HEADER_ENTRYPOINTS_FILE = "invoker_cls";
+	public static final String SOURCE = "SOURCE";
+	public static final String SINK = "SINK";
+	public static final String VERSION = "0.1";
+	public static final String OPAQUE_PREDICATE_LOCAL = "opaque_predicate_local";
 	
 	/**
 	 * Classes
@@ -47,4 +51,10 @@ public class Constants {
 	 * Methods
 	 */
 	public static final String INIT_METHOD_SUBSIG = "void <init>()";
+	
+	/**
+	 * Files
+	 */
+	public static final String SOURCES_SINKS_FILE = "/SourcesSinks.txt";
+	public static final String EASY_TAINT_WRAPPER_FILE = "/EasyTaintWrapperSource.txt";
 }

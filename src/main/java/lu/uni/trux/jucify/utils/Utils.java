@@ -1,6 +1,8 @@
 package lu.uni.trux.jucify.utils;
 
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 import org.javatuples.Pair;
@@ -11,10 +13,8 @@ import soot.PatchingChain;
 import soot.Scene;
 import soot.SootMethod;
 import soot.SootMethodRef;
-import soot.Type;
 import soot.Unit;
 import soot.jimple.Jimple;
-import soot.jimple.ReturnVoidStmt;
 
 /*-
  * #%L
@@ -44,7 +44,6 @@ import soot.jimple.ReturnVoidStmt;
 
 public class Utils {
 
-	private static int localNum = 0;
 	private static Map<String, String> compactTypesToJimpleTypes = null;
 
 	public static String removeNodePrefix(String s) {
@@ -54,16 +53,6 @@ public class Utils {
 		return s;
 	}
 
-	public static Local addLocalToBody(Body b, Type t) {
-		Local l = Jimple.v().newLocal(getNextLocalName(), t);
-		b.getLocals().add(l);
-		return l;
-	}
-
-	private static String getNextLocalName() {
-		return "loc"  + localNum++;
-	}
-
 	public static SootMethodRef getMethodRef(String className, String methodName) {
 		return Scene.v().getSootClass(className).getMethod(methodName).makeRef();
 	}
@@ -71,22 +60,16 @@ public class Utils {
 	public static Unit addMethodCall(SootMethod caller, SootMethod callee) {
 		Body b = caller.retrieveActiveBody();
 		final PatchingChain<Unit> units = b.getUnits();
-		ReturnVoidStmt stmt = null;
-		for(Unit u: units) {
-			if(u instanceof ReturnVoidStmt) {
-				stmt = (ReturnVoidStmt) u;
-				Local thisLocal = b.getThisLocal();
-				Unit newUnit = Jimple.v().newInvokeStmt(
-						Jimple.v().newSpecialInvokeExpr(thisLocal,
-								Utils.getMethodRef(Constants.DUMMY_BINARY_CLASS, callee.getSubSignature())));
-				units.insertBefore(newUnit, stmt);
-				return newUnit;
-			}
-		}
-		return null;
+		Local thisLocal = b.getThisLocal();
+		Unit newUnit = Jimple.v().newInvokeStmt(
+				Jimple.v().newSpecialInvokeExpr(thisLocal,
+						Utils.getMethodRef(Constants.DUMMY_BINARY_CLASS, callee.getSubSignature())));
+		units.insertBefore(newUnit, units.getLast());
+		return newUnit;
 	}
 
 	public static Pair<String, String> compactSigtoJimpleSig(String sig) {
+		sig = sig.trim();
 		String[] split = sig.split("\\)");
 		String ret = split[1];
 		String[] splitSplit = split[0].split("\\(");
@@ -129,5 +112,41 @@ public class Utils {
 			return String.format("%s[]", key.substring(1));
 		}
 		return compactTypesToJimpleTypes.get(key);
+	}
+	
+	public static String toJimpleSignature(String clazz, String ret, String method, String params) {
+		return String.format("<%s: %s %s%s>", clazz, ret, method, params);
+	}
+	
+	public static String getClassNameFromSignature(String sig) {
+		String tmp = sig.split(" ")[0];
+		return tmp.substring(1, tmp.length() - 1);
+	}
+
+	public static String getMethodNameFromSignature(String sig) {
+		String tmp = sig.split(" ")[2];
+		return tmp.substring(0, tmp.indexOf("("));
+	}
+
+	public static String getReturnNameFromSignature(String sig) {
+		return sig.split(" ")[1];
+	}
+
+	public static List<String> getParametersNamesFromSignature(String sig) {
+		String tmp = sig.split(" ")[2];
+		String params = tmp.substring(tmp.indexOf("(") + 1, tmp.indexOf(")"));
+		String[] paramsArray = params.split(",");
+		List<String> parameters = new ArrayList<String>();
+		for(int i = 0 ; i < paramsArray.length ; i++) {
+			parameters.add(paramsArray[i]);
+		}
+		return parameters;
+	}
+	
+	public static boolean isFromNativeCode(SootMethod sm) {
+		if(sm.getDeclaringClass().equals(Scene.v().getSootClass(Constants.DUMMY_BINARY_CLASS))) {
+			return true;
+		}
+		return false;
 	}
 }

@@ -1,13 +1,17 @@
 package lu.uni.trux.jucify;
 
+import java.util.Date;
 import java.util.List;
 
 import org.javatuples.Pair;
 
 import lu.uni.trux.jucify.callgraph.CallGraphPatcher;
 import lu.uni.trux.jucify.utils.CommandLineOptions;
+import lu.uni.trux.jucify.utils.Constants;
 import soot.Scene;
+import soot.jimple.infoflow.InfoflowConfiguration.PathReconstructionMode;
 import soot.jimple.infoflow.android.InfoflowAndroidConfiguration;
+import soot.jimple.infoflow.android.InfoflowAndroidConfiguration.SootIntegrationMode;
 import soot.jimple.infoflow.android.SetupApplication;
 import soot.jimple.toolkits.callgraph.CallGraph;
 
@@ -39,9 +43,10 @@ import soot.jimple.toolkits.callgraph.CallGraph;
 
 public class Main {
 	public static void main(String[] args) throws Throwable {
+		System.out.println(String.format("%s v%s started on %s\n", Constants.JUCIFY, Constants.VERSION, new Date()));
 		CommandLineOptions options = new CommandLineOptions(args);
 		String apk = options.getApk(),
-			   platforms = options.getPlatforms();
+				platforms = options.getPlatforms();
 		List<Pair<String, String>> files = options.getFiles();
 		InfoflowAndroidConfiguration ifac = new InfoflowAndroidConfiguration();
 		ifac.getAnalysisFileConfig().setAndroidPlatformDir(platforms);
@@ -49,20 +54,28 @@ public class Main {
 		SetupApplication sa = new SetupApplication(ifac);
 		sa.constructCallgraph();
 		CallGraph cg = Scene.v().getCallGraph();
-		
-		System.out.println("Loading files...");
+
+
+		System.out.println("Loading binary call-graphs + java-to-native and native-to-java links...");
 		CallGraphPatcher cgp = new CallGraphPatcher(cg);
 		cgp.importBinaryCallGraph(files);
 		System.out.println("Binary callgraph imported.");
+
+		sa.getConfig().setSootIntegrationMode(SootIntegrationMode.UseExistingInstance);
+		sa.getConfig().getPathConfiguration().setPathReconstructionMode(PathReconstructionMode.Precise);
 		
+		if(options.hasTaintAnalysis()) {
+			System.out.println("Taint Analysis in progress...");
+			FlowAnalysis fa = new  FlowAnalysis(sa);
+			fa.run();
+			System.out.println("Taint Analysis performed.");
+		}
+
 		if(options.hasExportCallGraph()) {
 			String destination = options.getExportCallGraphDestination();
 			System.out.println(String.format("Exporting call graph to %s...", destination));
 			cgp.dotifyCallGraph(destination);
 			System.out.println("Callgraph exported.");
 		}
-		
-		
-		
 	}
 }

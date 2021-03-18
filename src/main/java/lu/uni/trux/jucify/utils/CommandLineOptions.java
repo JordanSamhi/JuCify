@@ -51,6 +51,7 @@ public class CommandLineOptions {
 	private static final Triplet<String, String, String> FILES = new Triplet<String, String, String>("files", "f", "Specify the files to load (dot file -> entrypoint file)");
 	private static final Triplet<String, String, String> EXPORT_CG = new Triplet<String, String, String>("export-cg-to-dot", "e", "Export call graph to dot file");
 	private static final Triplet<String, String, String> TIMEOUT = new Triplet<String, String, String>("timeout", "t", "Set the timeout for analysis");
+	private static final Triplet<String, String, String> TAINT_ANALYSIS = new Triplet<String, String, String>("taintanalysis", "ta", "Run taint analysis on APK");
 	private static final Triplet<String, String, String> PLATFORMS =
 			new Triplet<String, String, String>("platforms", "p", "Android platforms folder");
 
@@ -115,6 +116,13 @@ public class CommandLineOptions {
 				.required(false)
 				.build();
 		
+		final Option ta = Option.builder(TAINT_ANALYSIS.getValue1())
+				.longOpt(TAINT_ANALYSIS.getValue0())
+				.desc(TAINT_ANALYSIS.getValue2())
+				.hasArg(false)
+				.required(false)
+				.build();
+		
 		final Option export = Option.builder(EXPORT_CG.getValue1())
 				.longOpt(EXPORT_CG.getValue0())
 				.desc(EXPORT_CG.getValue2())
@@ -144,6 +152,7 @@ public class CommandLineOptions {
 		this.options.addOption(to);
 		this.options.addOption(files);
 		this.options.addOption(export);
+		this.options.addOption(ta);
 
 		for(Option o : this.firstOptions.getOptions()) {
 			this.options.addOption(o);
@@ -180,6 +189,10 @@ public class CommandLineOptions {
 	
 	public boolean hasExportCallGraph() {
 		return this.cmdLine.hasOption(EXPORT_CG.getValue1());
+	}
+	
+	public boolean hasTaintAnalysis() {
+		return this.cmdLine.hasOption(TAINT_ANALYSIS.getValue1());
 	}
 	
 	public boolean hasTimeout() {
