@@ -1,5 +1,7 @@
 package lu.uni.trux.jucify.utils;
 
+import java.io.File;
+
 /*-
  * #%L
  * JuCify
@@ -40,6 +42,7 @@ public class Constants {
 	public static final String SINK = "SINK";
 	public static final String VERSION = "0.1";
 	public static final String OPAQUE_PREDICATE_LOCAL = "opaque_predicate_local";
+	public static final String TARGET_TMP_DIR = String.format("%s%s%s", System.getProperty("java.io.tmpdir"), File.separator, "jucify");
 	
 	/**
 	 * Classes

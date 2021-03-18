@@ -2,11 +2,11 @@ package lu.uni.trux.jucify;
 
 import java.io.File;
 import java.io.IOException;
-import java.net.URISyntaxException;
-import java.net.URL;
+import java.io.InputStream;
 import java.util.Arrays;
 import java.util.List;
 
+import org.apache.commons.io.FileUtils;
 import org.xmlpull.v1.XmlPullParserException;
 
 import lu.uni.trux.jucify.files.SourcesSinksManager;
@@ -34,11 +34,12 @@ public class FlowAnalysis {
 	public void run() {
 		final ITaintPropagationWrapper taintWrapper;
 		EasyTaintWrapper easyTaintWrapper = null;
-		URL resource = Main.class.getResource(Constants.EASY_TAINT_WRAPPER_FILE);
+		InputStream resource = Main.class.getResourceAsStream(Constants.EASY_TAINT_WRAPPER_FILE);
 		File twFile = null;
 		try {
-			twFile = new File(resource.toURI());
-		} catch (URISyntaxException e) {
+			twFile = new File(String.format("%s%s", Constants.TARGET_TMP_DIR, Constants.EASY_TAINT_WRAPPER_FILE));
+			FileUtils.copyInputStreamToFile(resource, twFile);
+		} catch (IOException e) {
 			System.err.println(e.getMessage());
 		}
 		if (twFile.exists())
