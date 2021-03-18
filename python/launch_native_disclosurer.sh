@@ -21,5 +21,12 @@ then
     end_program "$FILE does not exist"
 fi
 
-python3.7 main.py $FILE
+DST=$(pwd)/$(dirname $FILE)/
+python3.7 main.py $FILE --out $DST
 check_return $? "Something went wront with retdec" ""
+
+LOC=$DST/$(basename $FILE .apk)"_result"
+for f in $LOC/*result
+do
+    tail -n +2 $f|awk -F, '{print $4}'|tr -d " " > $f.entrypoints
+done

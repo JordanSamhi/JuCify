@@ -23,14 +23,17 @@ def load_entrypoints(location: str) -> list:
             yield line.rstrip()
 
 
-def populate_new_G(node: str, graph, new_graph):
+def populate_new_G(node: str, graph, new_graph, visitedNodes):
+    if node in visitedNodes:
+        return
     if graph.has_node(node):
+        visitedNodes.append(node)
         succ = graph.successors(node)
         if not new_G.has_node(node):
             new_G.add_node(node)
         for s in succ:
             new_G.add_edge(node, s)
-            populate_new_G(s, graph, new_graph)
+            populate_new_G(s, graph, new_graph, visitedNodes)
 
 
 def check_files_existence(*files):
@@ -52,6 +55,6 @@ if __name__ == "__main__":
     new_G = nx.DiGraph()
     for e in entrypoints:
         node = f"Node_{e}"
-        populate_new_G(node, G, new_G)
+        populate_new_G(node, G, new_G, [])
     if args.write:
         nx.drawing.nx_agraph.write_dot(new_G, args.write)
