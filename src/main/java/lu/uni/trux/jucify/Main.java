@@ -78,5 +78,6 @@ public class Main {
 			cgp.dotifyCallGraph(destination);
 			CustomPrints.psuccess("Callgraph exported.");
 		}
+		System.out.println(String.format("End of %s", Constants.JUCIFY));
 	}
 }

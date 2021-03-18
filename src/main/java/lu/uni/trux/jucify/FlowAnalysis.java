@@ -82,6 +82,8 @@ public class FlowAnalysis {
 						}
 					}
 				}
+			}else {
+				CustomPrints.pwarning("No Flow found.");
 			}
 		}
 	}
