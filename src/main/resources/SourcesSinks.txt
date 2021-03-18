@@ -1,0 +1,2 @@
+SOURCE|<android.telephony.TelephonyManager: java.lang.String getImei()>
+SINK|<android.util.Log: int d(java.lang.String,java.lang.String)>

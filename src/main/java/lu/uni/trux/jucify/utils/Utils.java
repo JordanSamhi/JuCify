@@ -1,15 +1,20 @@
 package lu.uni.trux.jucify.utils;
 
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
+import org.javatuples.Pair;
+
 import soot.Body;
 import soot.Local;
 import soot.PatchingChain;
 import soot.Scene;
 import soot.SootMethod;
 import soot.SootMethodRef;
-import soot.Type;
 import soot.Unit;
 import soot.jimple.Jimple;
-import soot.jimple.ReturnVoidStmt;
 
 /*-
  * #%L
@@ -38,8 +43,8 @@ import soot.jimple.ReturnVoidStmt;
  */
 
 public class Utils {
-	
-	private static int localNum = 0;
+
+	private static Map<String, String> compactTypesToJimpleTypes = null;
 
 	public static String removeNodePrefix(String s) {
 		if(s.startsWith(Constants.NODE_PREFIX)) {
@@ -47,37 +52,101 @@ public class Utils {
 		}
 		return s;
 	}
-	
-	public static Local addLocalToBody(Body b, Type t) {
-		Local l = Jimple.v().newLocal(getNextLocalName(), t);
-		b.getLocals().add(l);
-		return l;
-	}
-	
-	private static String getNextLocalName() {
-		return "loc"  + localNum++;
-	}
-	
+
 	public static SootMethodRef getMethodRef(String className, String methodName) {
 		return Scene.v().getSootClass(className).getMethod(methodName).makeRef();
 	}
-	
+
 	public static Unit addMethodCall(SootMethod caller, SootMethod callee) {
 		Body b = caller.retrieveActiveBody();
 		final PatchingChain<Unit> units = b.getUnits();
-		ReturnVoidStmt stmt = null;
-		for(Unit u: units) {
-			if(u instanceof ReturnVoidStmt) {
-				stmt = (ReturnVoidStmt) u;
-				Local thisLocal = b.getThisLocal();
-				Unit newUnit = Jimple.v().newInvokeStmt(
-						Jimple.v().newSpecialInvokeExpr(thisLocal,
-								Utils.getMethodRef(Constants.DUMMY_BINARY_CLASS, callee.getSubSignature())));
-				units.insertBefore(newUnit, stmt);
-				return newUnit;
+		Local thisLocal = b.getThisLocal();
+		Unit newUnit = Jimple.v().newInvokeStmt(
+				Jimple.v().newSpecialInvokeExpr(thisLocal,
+						Utils.getMethodRef(Constants.DUMMY_BINARY_CLASS, callee.getSubSignature())));
+		units.insertBefore(newUnit, units.getLast());
+		return newUnit;
+	}
+
+	public static Pair<String, String> compactSigtoJimpleSig(String sig) {
+		sig = sig.trim();
+		String[] split = sig.split("\\)");
+		String ret = split[1];
+		String[] splitSplit = split[0].split("\\(");
+		String params = null;
+		String currentType = null;
+		StringBuilder sb = new StringBuilder();
+		sb.append("(");
+		if(splitSplit.length != 0) {
+			params = splitSplit[1];
+			String[] splitParams = params.split(" ");
+			for(int i = 0 ; i < splitParams.length ; i++) {
+				currentType = splitParams[i];
+				sb.append(getCompactTypesToJimpleTypes(currentType));
+				if(i != splitParams.length - 1) {
+					sb.append(",");
+				}
 			}
 		}
-		return null;
+		sb.append(")");
+		ret = getCompactTypesToJimpleTypes(ret);
+		return new Pair<String, String>(sb.toString(), ret);
+	}
+
+	private static String getCompactTypesToJimpleTypes(String key) {
+		if(compactTypesToJimpleTypes == null) {
+			compactTypesToJimpleTypes = new HashMap<String, String>();
+			compactTypesToJimpleTypes.put("V", "void");
+			compactTypesToJimpleTypes.put("Z", "boolean");
+			compactTypesToJimpleTypes.put("B", "byte");
+			compactTypesToJimpleTypes.put("C", "char");
+			compactTypesToJimpleTypes.put("S", "short");
+			compactTypesToJimpleTypes.put("I", "int");
+			compactTypesToJimpleTypes.put("J", "long");
+			compactTypesToJimpleTypes.put("F", "float");
+			compactTypesToJimpleTypes.put("D", "double");
+		}
+		if(key.startsWith("L")) {
+			return key.substring(1, key.length() - 1).replace("/", ".");
+		}else if(key.startsWith("[")) {
+			return String.format("%s[]", key.substring(1));
+		}
+		return compactTypesToJimpleTypes.get(key);
 	}
 	
+	public static String toJimpleSignature(String clazz, String ret, String method, String params) {
+		return String.format("<%s: %s %s%s>", clazz, ret, method, params);
+	}
+	
+	public static String getClassNameFromSignature(String sig) {
+		String tmp = sig.split(" ")[0];
+		return tmp.substring(1, tmp.length() - 1);
+	}
+
+	public static String getMethodNameFromSignature(String sig) {
+		String tmp = sig.split(" ")[2];
+		return tmp.substring(0, tmp.indexOf("("));
+	}
+
+	public static String getReturnNameFromSignature(String sig) {
+		return sig.split(" ")[1];
+	}
+
+	public static List<String> getParametersNamesFromSignature(String sig) {
+		String tmp = sig.split(" ")[2];
+		String params = tmp.substring(tmp.indexOf("(") + 1, tmp.indexOf(")"));
+		String[] paramsArray = params.split(",");
+		List<String> parameters = new ArrayList<String>();
+		for(int i = 0 ; i < paramsArray.length ; i++) {
+			parameters.add(paramsArray[i]);
+		}
+		return parameters;
+	}
+	
+	public static boolean isFromNativeCode(SootMethod sm) {
+		if(sm.getDeclaringClass().equals(Scene.v().getSootClass(Constants.DUMMY_BINARY_CLASS))) {
+			return true;
+		}
+		return false;
+	}
 }

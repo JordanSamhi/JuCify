@@ -1,5 +1,8 @@
 package lu.uni.trux.jucify.utils;
 
+import java.util.ArrayList;
+import java.util.List;
+
 import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.CommandLineParser;
 import org.apache.commons.cli.DefaultParser;
@@ -7,6 +10,7 @@ import org.apache.commons.cli.HelpFormatter;
 import org.apache.commons.cli.Option;
 import org.apache.commons.cli.Options;
 import org.apache.commons.cli.ParseException;
+import org.javatuples.Pair;
 import org.javatuples.Triplet;
 
 /*-
@@ -44,9 +48,10 @@ public class CommandLineOptions {
 
 	private static final Triplet<String, String, String> APK = new Triplet<String, String, String>("apk", "a", "Apk file");
 	private static final Triplet<String, String, String> HELP = new Triplet<String, String, String>("help", "h", "Print this message");
-	private static final Triplet<String, String, String> DOT = new Triplet<String, String, String>("dot", "d", "Specify the dot file to load");
+	private static final Triplet<String, String, String> FILES = new Triplet<String, String, String>("files", "f", "Specify the files to load (dot file -> entrypoint file)");
 	private static final Triplet<String, String, String> EXPORT_CG = new Triplet<String, String, String>("export-cg-to-dot", "e", "Export call graph to dot file");
 	private static final Triplet<String, String, String> TIMEOUT = new Triplet<String, String, String>("timeout", "t", "Set the timeout for analysis");
+	private static final Triplet<String, String, String> TAINT_ANALYSIS = new Triplet<String, String, String>("taintanalysis", "ta", "Run taint analysis on APK");
 	private static final Triplet<String, String, String> PLATFORMS =
 			new Triplet<String, String, String>("platforms", "p", "Android platforms folder");
 
@@ -95,11 +100,11 @@ public class CommandLineOptions {
 				.required(true)
 				.build();
 		
-		final Option dot = Option.builder(DOT.getValue1())
-				.longOpt(DOT.getValue0())
-				.desc(DOT.getValue2())
+		final Option files = Option.builder(FILES.getValue1())
+				.longOpt(FILES.getValue0())
+				.desc(FILES.getValue2())
 				.hasArg(true)
-				.argName(DOT.getValue0())
+				.argName(FILES.getValue0())
 				.required(true)
 				.build();
 		
@@ -108,6 +113,13 @@ public class CommandLineOptions {
 				.desc(TIMEOUT.getValue2())
 				.hasArg(true)
 				.argName(TIMEOUT.getValue0())
+				.required(false)
+				.build();
+		
+		final Option ta = Option.builder(TAINT_ANALYSIS.getValue1())
+				.longOpt(TAINT_ANALYSIS.getValue0())
+				.desc(TAINT_ANALYSIS.getValue2())
+				.hasArg(false)
 				.required(false)
 				.build();
 		
@@ -138,8 +150,9 @@ public class CommandLineOptions {
 		this.options.addOption(apk);
 		this.options.addOption(platforms);
 		this.options.addOption(to);
-		this.options.addOption(dot);
+		this.options.addOption(files);
 		this.options.addOption(export);
+		this.options.addOption(ta);
 
 		for(Option o : this.firstOptions.getOptions()) {
 			this.options.addOption(o);
@@ -154,8 +167,20 @@ public class CommandLineOptions {
 		return this.cmdLine.getOptionValue(PLATFORMS.getValue0());
 	}
 	
-	public String getDot() {
-		return this.cmdLine.getOptionValue(DOT.getValue0());
+	public List<Pair<String, String>> getFiles() {
+		String files = this.cmdLine.getOptionValue(FILES.getValue0());
+		List<Pair<String, String>> pairs = new ArrayList<Pair<String,String>>();
+		for(String pair: files.split("\\|")) {
+			if(! pair.isEmpty()) {
+				String[] split = pair.split(":");
+				if(split.length == 2) {
+					pairs.add(new Pair<String, String>(split[0], split[1]));
+				}else {
+					System.err.println(String.format("Files not valid: $s", pair));
+				}
+			}
+		}
+		return pairs;
 	}
 	
 	public String getExportCallGraphDestination() {
@@ -164,6 +189,10 @@ public class CommandLineOptions {
 	
 	public boolean hasExportCallGraph() {
 		return this.cmdLine.hasOption(EXPORT_CG.getValue1());
+	}
+	
+	public boolean hasTaintAnalysis() {
+		return this.cmdLine.hasOption(TAINT_ANALYSIS.getValue1());
 	}
 	
 	public boolean hasTimeout() {
