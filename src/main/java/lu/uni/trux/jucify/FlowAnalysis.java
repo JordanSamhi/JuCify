@@ -11,6 +11,7 @@ import org.xmlpull.v1.XmlPullParserException;
 
 import lu.uni.trux.jucify.files.SourcesSinksManager;
 import lu.uni.trux.jucify.utils.Constants;
+import lu.uni.trux.jucify.utils.CustomPrints;
 import lu.uni.trux.jucify.utils.Utils;
 import soot.jimple.Stmt;
 import soot.jimple.infoflow.android.SetupApplication;
@@ -40,16 +41,16 @@ public class FlowAnalysis {
 			twFile = new File(String.format("%s%s", Constants.TARGET_TMP_DIR, Constants.EASY_TAINT_WRAPPER_FILE));
 			FileUtils.copyInputStreamToFile(resource, twFile);
 		} catch (IOException e) {
-			System.err.println(e.getMessage());
+			CustomPrints.perror(e.getMessage());
 		}
 		if (twFile.exists())
 			try {
 				easyTaintWrapper = new EasyTaintWrapper(twFile);
 			} catch (IOException e) {
-				System.err.println(e.getMessage());
+				CustomPrints.perror(e.getMessage());
 			}
 		else {
-			System.err.println("Taint wrapper definition file not found at "
+			CustomPrints.perror("Taint wrapper definition file not found at "
 					+ twFile.getAbsolutePath());
 		}
 		easyTaintWrapper.setAggressiveMode(true);
@@ -59,9 +60,9 @@ public class FlowAnalysis {
 		try {
 			results = sa.runInfoflow(SourcesSinksManager.v().getSources(), SourcesSinksManager.v().getSinks());
 		} catch (IOException e) {
-			System.err.println(e.getMessage());
+			CustomPrints.perror(e.getMessage());
 		} catch (XmlPullParserException e) {
-			System.err.println(e.getMessage());
+			CustomPrints.perror(e.getMessage());
 		}
 		if(results != null) {
 			if(results.getResults() != null && !results.getResults().isEmpty()) {
@@ -70,7 +71,7 @@ public class FlowAnalysis {
 						List<Stmt> path = Arrays.asList(source.getPath());
 						if(pathContainCallToNativeMethods(path)) {
 							if (path != null && !path.isEmpty()) {
-								System.out.println("Found path through native code: ");
+								CustomPrints.psuccess("Found path through native code: ");
 								System.out.println("  - From " + source);
 								System.out.println("    - Detailed path:");
 								for(Stmt s : path) {

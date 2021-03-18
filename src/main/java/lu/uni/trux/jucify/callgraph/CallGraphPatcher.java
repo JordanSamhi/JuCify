@@ -19,6 +19,7 @@ import guru.nidi.graphviz.model.MutableNode;
 import guru.nidi.graphviz.parse.Parser;
 import lu.uni.trux.jucify.instrumentation.DummyBinaryClass;
 import lu.uni.trux.jucify.utils.Constants;
+import lu.uni.trux.jucify.utils.CustomPrints;
 import lu.uni.trux.jucify.utils.Utils;
 import soot.Body;
 import soot.IntType;
@@ -79,7 +80,7 @@ public class CallGraphPatcher {
 				dot = new FileInputStream(dotFile);
 				g = new Parser().read(dot);
 				if(dot == null || g == null) {
-					System.err.println("Something wrong with dot file or mutable graph");
+					CustomPrints.perror("Something wrong with dot file or mutable graph");
 					System.exit(1);
 				}
 
@@ -188,7 +189,7 @@ public class CallGraphPatcher {
 											if(ie.getMethod().equals(m)) {
 												ie.setMethodRef(sm.makeRef());
 												this.cg.addEdge(new Edge(met, stmt, sm));
-												System.out.println(String.format("Adding java-to-native Edge from %s to %s", met, sm));
+												CustomPrints.pinfo(String.format("Adding java-to-native Edge from %s to %s", met, sm));
 											}
 										}
 									}
@@ -236,7 +237,7 @@ public class CallGraphPatcher {
 								}
 								Edge e = new Edge(sm, newStmt, met);
 								this.cg.addEdge(e);
-								System.out.println(String.format("Adding native-to-java Edge from %s to %s", sm, met));
+								CustomPrints.pinfo(String.format("Adding native-to-java Edge from %s to %s", sm, met));
 
 								if(!ret.equals(VoidType.v())) {
 									// FIX MULTIPLE RETURN OF SAME TYPE (OPAQUE PREDICATE)
@@ -279,7 +280,7 @@ public class CallGraphPatcher {
 			}
 
 		} catch (IOException e) {
-			System.err.println(e.getMessage());
+			CustomPrints.perror(e.getMessage());
 			System.exit(1);
 		}
 	}
