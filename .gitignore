@@ -3,5 +3,4 @@ sootOutput
 target
 tests
 *.DS_Store
-*apps
-*__pycache__
+apps/
