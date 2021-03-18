@@ -7,6 +7,8 @@ import java.io.InputStreamReader;
 import java.util.HashSet;
 import java.util.Set;
 
+import lu.uni.trux.jucify.utils.CustomPrints;
+
 /*-
  * #%L
  * JuCify
@@ -65,7 +67,7 @@ public abstract class FileLoader {
 			br.close();
 			fis.close();
 		} catch (IOException e) {
-			System.err.println(e.getMessage());
+			CustomPrints.perror(e.getMessage());
 		}
 		return set;
 	}

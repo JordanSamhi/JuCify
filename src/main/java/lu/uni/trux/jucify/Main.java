@@ -8,6 +8,7 @@ import org.javatuples.Pair;
 import lu.uni.trux.jucify.callgraph.CallGraphPatcher;
 import lu.uni.trux.jucify.utils.CommandLineOptions;
 import lu.uni.trux.jucify.utils.Constants;
+import lu.uni.trux.jucify.utils.CustomPrints;
 import soot.Scene;
 import soot.jimple.infoflow.InfoflowConfiguration.PathReconstructionMode;
 import soot.jimple.infoflow.android.InfoflowAndroidConfiguration;
@@ -56,26 +57,26 @@ public class Main {
 		CallGraph cg = Scene.v().getCallGraph();
 
 
-		System.out.println("Loading binary call-graphs + java-to-native and native-to-java links...");
+		CustomPrints.pinfo("Loading binary call-graphs + java-to-native and native-to-java links...");
 		CallGraphPatcher cgp = new CallGraphPatcher(cg);
 		cgp.importBinaryCallGraph(files);
-		System.out.println("Binary callgraph imported.");
+		CustomPrints.psuccess("Binary callgraph imported.");
 
 		sa.getConfig().setSootIntegrationMode(SootIntegrationMode.UseExistingInstance);
 		sa.getConfig().getPathConfiguration().setPathReconstructionMode(PathReconstructionMode.Precise);
 		
 		if(options.hasTaintAnalysis()) {
-			System.out.println("Taint Analysis in progress...");
+			CustomPrints.pinfo("Taint Analysis in progress...");
 			FlowAnalysis fa = new  FlowAnalysis(sa);
 			fa.run();
-			System.out.println("Taint Analysis performed.");
+			CustomPrints.psuccess("Taint Analysis performed.");
 		}
 
 		if(options.hasExportCallGraph()) {
 			String destination = options.getExportCallGraphDestination();
-			System.out.println(String.format("Exporting call graph to %s...", destination));
+			CustomPrints.pinfo(String.format("Exporting call graph to %s...", destination));
 			cgp.dotifyCallGraph(destination);
-			System.out.println("Callgraph exported.");
+			CustomPrints.psuccess("Callgraph exported.");
 		}
 	}
 }

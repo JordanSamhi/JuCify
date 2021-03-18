@@ -83,7 +83,7 @@ public class CommandLineOptions {
 			}
 			this.cmdLine = this.parser.parse(this.options, args);
 		} catch (ParseException e) {
-			System.err.println(e.getMessage());
+			CustomPrints.perror(e.getMessage());
 			System.exit(1);
 		}
 	}
@@ -176,7 +176,7 @@ public class CommandLineOptions {
 				if(split.length == 2) {
 					pairs.add(new Pair<String, String>(split[0], split[1]));
 				}else {
-					System.err.println(String.format("Files not valid: $s", pair));
+					CustomPrints.perror(String.format("Files not valid: $s", pair));
 				}
 			}
 		}
