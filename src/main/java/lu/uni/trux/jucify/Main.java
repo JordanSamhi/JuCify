@@ -81,11 +81,5 @@ public class Main {
 			cgp.dotifyCallGraph(destination);
 			CustomPrints.psuccess("Callgraph exported.");
 		}
-		System.out.println(String.format("End of %s", Constants.JUCIFY));
-		System.out.println(Scene.v().getMethod("<lu.uni.trux.leaker_imei.MainActivity: void onCreate(android.os.Bundle)>").retrieveActiveBody());
-		for(SootMethod sm: Scene.v().getSootClass("DummyBinaryClass").getMethods()) {
-			System.out.println(sm);
-		}
-		System.out.println(Scene.v().getMethod("<DummyBinaryClass: void Java_lu_uni_trux_leaker_1imei_MainActivity_nativeLeaker(java.lang.String)>").retrieveActiveBody());
 	}
 }
