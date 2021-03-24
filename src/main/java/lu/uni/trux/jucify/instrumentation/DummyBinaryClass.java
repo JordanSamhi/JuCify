@@ -124,7 +124,7 @@ public class DummyBinaryClass {
 			this.checkOpaquePredicateLocalExistence(body);
 			for(Local local: body.getLocals()) {
 				if(local.getType().equals(t) && !local.equals(retLoc)) {
-					this.addOpaquePredicate(body, units.getLast(), Jimple.v().newReturnStmt(local));
+					this.addOpaquePredicateForReturn(body, units.getLast(), Jimple.v().newReturnStmt(local));
 				}
 			}
 		}
