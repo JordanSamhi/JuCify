@@ -205,23 +205,30 @@ public class CallGraphPatcher {
 								Body b = sm.retrieveActiveBody();
 								Local local = null;
 								LocalGenerator lg = new LocalGenerator(b);
-								local = DummyBinaryClass.v().generateLocalAndNewStmt(b, this.getfirstAfterIdenditiesUnits(b), met.getDeclaringClass().getType());
+								local = DummyBinaryClass.v().getOrGenerateLocal(b, this.getfirstAfterIdenditiesUnits(b), met.getDeclaringClass().getType());
 
 								int paramLength = met.getParameterCount();
 								List<Value> potentialParameters = new ArrayList<Value>();
 
+								boolean found;
 								for(Type t: met.getParameterTypes()) {
+									found = false;
 									for(Local l: b.getLocals()) {
 										if(l.getType().equals(t)) {
 											if(!potentialParameters.contains(l)) {
 												potentialParameters.add(l);
+												found = true;
 											}
 										}
 									}
+									if(!found) {
+										potentialParameters.add(DummyBinaryClass.v().generateLocalAndNewStmt(b, this.getfirstAfterIdenditiesUnits(b), t));
+									}
 								}
-
+								
 								boolean isGoodCombi = true;
-								for (List<Value> parameters : new Permutator<Value>(potentialParameters, paramLength)) {
+								Permutator<Value> permutator = new Permutator<Value>(potentialParameters, paramLength);
+								for (List<Value> parameters : permutator) {
 									isGoodCombi = true;
 									for(int i = 0 ; i < paramLength ; i++) {
 										if(!parameters.get(i).getType().equals(met.getParameterTypes().get(i))) {
@@ -248,7 +255,9 @@ public class CallGraphPatcher {
 										if(newStmt != null) {
 											Unit firstAfterIdenditiesUnits = this.getfirstAfterIdenditiesUnitsAfterInit(b);
 											b.getUnits().insertBefore(newStmt, firstAfterIdenditiesUnits);
-											DummyBinaryClass.v().addOpaquePredicate(b, b.getUnits().getSuccOf(newStmt), newStmt);
+											if(permutator.size() > 1) {
+												DummyBinaryClass.v().addOpaquePredicate(b, b.getUnits().getSuccOf(newStmt), newStmt);
+											}
 										}
 										Edge e = new Edge(sm, newStmt, met);
 										this.cg.addEdge(e);

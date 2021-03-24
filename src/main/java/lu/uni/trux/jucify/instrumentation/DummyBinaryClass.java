@@ -162,7 +162,7 @@ public class DummyBinaryClass {
 		units.insertAfter(afterTarget, ifStmt);
 		b.validate();
 	}
-
+	
 	public Local generateLocalAndNewStmt(Body b, Unit unit, Type t) {
 		LocalGenerator lg = new LocalGenerator(b);
 		Local l = lg.generateLocal(t);
@@ -173,6 +173,15 @@ public class DummyBinaryClass {
 						Utils.getMethodRef(t.toString(), Constants.INIT_METHOD_SUBSIG))));
 		b.getUnits().insertBefore(unitsToAdd, unit);
 		return l;
+	}
+
+	public Local getOrGenerateLocal(Body b, Unit unit, Type t) {
+		for(Local loc: b.getLocals()) {
+			if(loc.getType().equals(t)) {
+				return loc;
+			}
+		}
+		return this.generateLocalAndNewStmt(b, unit, t);
 	}
 
 	public Pair<Local, Pair<List<Unit>, Stmt>> checkDummyBinaryClassLocalExistence(Body b, Stmt stmt) {

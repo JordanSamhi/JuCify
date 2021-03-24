@@ -79,6 +79,17 @@ public class Utils {
 		sb.append("(");
 		if(splitSplit.length != 0) {
 			params = splitSplit[1];
+			List<Integer> indexes = new ArrayList<Integer>();
+			for(int i = 0 ; i < params.length() ; i++) {
+				if(params.charAt(i) == ';') {
+					indexes.add(i);
+				}
+			}
+			int c = 0;
+			for(Integer i: indexes) {
+				params = params.substring(0, i + 1 + c) + " " + params.substring(i + 1 + c);
+				c++;
+			}
 			String[] splitParams = params.split(" ");
 			for(int i = 0 ; i < splitParams.length ; i++) {
 				currentType = splitParams[i];

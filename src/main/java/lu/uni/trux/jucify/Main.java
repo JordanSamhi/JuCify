@@ -10,6 +10,7 @@ import lu.uni.trux.jucify.utils.CommandLineOptions;
 import lu.uni.trux.jucify.utils.Constants;
 import lu.uni.trux.jucify.utils.CustomPrints;
 import soot.Scene;
+import soot.SootMethod;
 import soot.jimple.infoflow.InfoflowConfiguration.CodeEliminationMode;
 import soot.jimple.infoflow.InfoflowConfiguration.PathReconstructionMode;
 import soot.jimple.infoflow.android.InfoflowAndroidConfiguration;
@@ -81,5 +82,10 @@ public class Main {
 			CustomPrints.psuccess("Callgraph exported.");
 		}
 		System.out.println(String.format("End of %s", Constants.JUCIFY));
+		System.out.println(Scene.v().getMethod("<lu.uni.trux.leaker_imei.MainActivity: void onCreate(android.os.Bundle)>").retrieveActiveBody());
+		for(SootMethod sm: Scene.v().getSootClass("DummyBinaryClass").getMethods()) {
+			System.out.println(sm);
+		}
+		System.out.println(Scene.v().getMethod("<DummyBinaryClass: void Java_lu_uni_trux_leaker_1imei_MainActivity_nativeLeaker(java.lang.String)>").retrieveActiveBody());
 	}
 }
