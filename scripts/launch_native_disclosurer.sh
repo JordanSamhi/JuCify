@@ -21,7 +21,7 @@ then
     end_program "$FILE does not exist"
 fi
 
-DST=$(pwd)/$(dirname $FILE)/
+DST=$(dirname $FILE)/
 python3.7 main.py $FILE --out $DST
 check_return $? "Something went wront with retdec" ""
 

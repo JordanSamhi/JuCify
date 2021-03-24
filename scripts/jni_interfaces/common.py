@@ -101,12 +101,18 @@ class JavaClass:
         self.desc = desc
         self.is_array = is_array
 
+    def __str__(self):
+        return self.name
+
 
 class JavaField:
     def __init__(self, cls, name, ftype):
         self.cls = cls
         self.name = name
         self.ftype = ftype
+
+    def __str__(self):
+        return f'<JavaField: {self.ftype} {self.name} of class {self.cls}>'
 
 
 class JavaMethod:
@@ -119,6 +125,9 @@ class JavaMethod:
     def get_return_type(self):
         pat = r'^\([\w\d[/;$]*\)(?P<rtype>[\w\d[/;$]+)$'
         return re.match(pat, self.signature).group('rtype')
+
+    def __str__(self):
+        return f'<JavaMethod: {self.name} {self.signature} of class {self.cls}>'
 
 
 class JNIEnvMissingError(Exception):

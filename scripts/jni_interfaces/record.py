@@ -1,7 +1,14 @@
+def cls_2_dot_pattern(cls_name):
+    """ Transform all class names to the dot seperated form.
+    """
+    if isinstance(cls_name, str):
+        cls_name = cls_name.replace('/', '.')
+    return cls_name
+
 
 class Invokee:
     def __init__(self, method):
-        self.cls_name = method.cls.name if method.cls is not None else None
+        self.cls_name = cls_2_dot_pattern(method.cls.name) if method.cls is not None else None
         self.desc = method.cls.desc if method.cls is not None else None
         self.method_name = method.name
         self.signature = method.signature
@@ -20,7 +27,7 @@ class Record:
 
     def __init__(self, cls_name, method_name, signature, func_ptr, symbol_name,
              static_method=None, obfuscated=None, static_export=False):
-        self.cls = cls_name
+        self.cls = cls_2_dot_pattern(cls_name)
         self.method_name = method_name
         self.signature = signature
         self.func_ptr = func_ptr

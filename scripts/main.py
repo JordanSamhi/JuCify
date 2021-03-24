@@ -15,7 +15,10 @@ from jni_interfaces.utils import (record_static_jni_functions, clean_records,
         record_dynamic_jni_functions, print_records, analyze_jni_function,
         jni_env_prepare_in_object, JNI_LOADER)
 
-SO_DIR = 'lib/armeabi-v7a/'
+# the longest time in seconds to analyze 1 JNI function.
+WAIT_TIME = 180
+
+SO_DIRS = ['lib/armeabi-v7a/', 'lib/arm64-v8a/']
 FDROID_DIR = '../fdroid_crawler'
 NATIVE_FILE = os.path.join(FDROID_DIR, 'natives')
 # OUT_DIR = 'fdroid_result'
@@ -24,6 +27,7 @@ OUT_DIR = os.path.expandvars('$SCRATCH/native_lin')
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
 
+# uncomment below to output log information
 logging.disable(level=logging.CRITICAL)
 
 
@@ -80,9 +84,9 @@ class MyPool(multiprocessing.pool.Pool):
 
 
 def main():
-     cmd()
+    cmd()
     # fdroid_run()
-    #lineage_run()
+    # lineage_run()
     # check_duplicates()
 
 
@@ -190,6 +194,15 @@ def sha_run(sha):
         print(f'download {sha} failed: {desc}', file=sys.stderr)
 
 
+def starts_with_so_dir(name):
+    itis = False
+    for so_dir in SO_DIRS:
+        if name.startswith(so_dir):
+            itis = True
+            break
+    return itis
+
+
 def apk_run(path, out=None, comprise=False):
     perf = Performance()
     if out is None:
@@ -201,7 +214,7 @@ def apk_run(path, out=None, comprise=False):
     apk, _, dex = AnalyzeAPK(path)
     with apk.zip as zf:
         for n in zf.namelist():
-            if n.startswith(SO_DIR) and n.endswith('.so'):
+            if n.endswith('.so') and starts_with_so_dir(n):
                 # print('='*100, n)
                 with zf.open(n) as so_file, mp.Manager() as mgr:
                     returns = mgr.dict()
@@ -218,7 +231,7 @@ def apk_run(path, out=None, comprise=False):
                         p.start()
                         perf.add_analyzed_func()
                         # For analysis of each .so file, we wait for 3mins at most.
-                        p.join(180)
+                        p.join(WAIT_TIME)
                         if p.is_alive():
                             perf.add_timeout()
                             p.terminate()

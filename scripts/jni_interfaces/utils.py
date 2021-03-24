@@ -12,6 +12,9 @@ from .jni_native import jni_native_interface as jenv
 from .record import Record, RecordNotFoundError
 
 JNI_LOADER = 'JNI_OnLoad'
+# value for "LengthLimiter" to limit the length of path a state goes through.
+# refer to: https://docs.angr.io/core-concepts/pathgroups
+MAX_LENGTH = 500
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
@@ -74,7 +77,7 @@ def extract_names(symbol):
 
 def record_dynamic_jni_functions(proj, jvm_ptr, jenv_ptr, dex=None):
     state = get_prepared_jni_onload_state(proj, jvm_ptr, jenv_ptr, dex)
-    tech = LengthLimiter(100)
+    tech = LengthLimiter(MAX_LENGTH)
     simgr = proj.factory.simgr(state)
     simgr.use_technique(tech)
     simgr.run()
@@ -139,7 +142,7 @@ def analyze_jni_function(func_addr, proj, jvm_ptr, jenv_ptr, dex=None, returns=N
     for k, v in updates.items():
         state.globals[k] = v
     jni_env_prepare_in_state(state, jvm_ptr, jenv_ptr, dex)
-    tech = LengthLimiter(15)
+    tech = LengthLimiter(MAX_LENGTH)
     simgr = proj.factory.simgr(state)
     simgr.use_technique(tech)
     try:
