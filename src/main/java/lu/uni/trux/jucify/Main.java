@@ -10,6 +10,7 @@ import lu.uni.trux.jucify.utils.CommandLineOptions;
 import lu.uni.trux.jucify.utils.Constants;
 import lu.uni.trux.jucify.utils.CustomPrints;
 import soot.Scene;
+import soot.jimple.infoflow.InfoflowConfiguration.CodeEliminationMode;
 import soot.jimple.infoflow.InfoflowConfiguration.PathReconstructionMode;
 import soot.jimple.infoflow.android.InfoflowAndroidConfiguration;
 import soot.jimple.infoflow.android.InfoflowAndroidConfiguration.SootIntegrationMode;
@@ -64,7 +65,8 @@ public class Main {
 
 		sa.getConfig().setSootIntegrationMode(SootIntegrationMode.UseExistingInstance);
 		sa.getConfig().getPathConfiguration().setPathReconstructionMode(PathReconstructionMode.Precise);
-
+		sa.getConfig().setCodeEliminationMode(CodeEliminationMode.NoCodeElimination);
+		
 		if(options.hasTaintAnalysis()) {
 			CustomPrints.pinfo("Taint Analysis in progress...");
 			FlowAnalysis fa = new  FlowAnalysis(sa);
