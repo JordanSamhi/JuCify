@@ -199,6 +199,8 @@ public class CallGraphPatcher {
 						}
 						// Handle Native to Java
 						javaTargets = nativeToJava.get(name);
+						Unit lastAdded = null,
+								insertPoint = null;
 						if(javaTargets != null && !javaTargets.isEmpty()) {
 							for(SootMethod met: javaTargets) {
 								Type ret = met.getReturnType();
@@ -225,7 +227,7 @@ public class CallGraphPatcher {
 										potentialParameters.add(DummyBinaryClass.v().generateLocalAndNewStmt(b, this.getfirstAfterIdenditiesUnits(b), t));
 									}
 								}
-								
+
 								boolean isGoodCombi = true;
 								Permutator<Value> permutator = new Permutator<Value>(potentialParameters, paramLength);
 								for (List<Value> parameters : permutator) {
@@ -253,8 +255,14 @@ public class CallGraphPatcher {
 											newStmt = Jimple.v().newAssignStmt(local, ie);
 										}
 										if(newStmt != null) {
-											Unit firstAfterIdenditiesUnits = this.getfirstAfterIdenditiesUnitsAfterInit(b);
-											b.getUnits().insertBefore(newStmt, firstAfterIdenditiesUnits);
+											if(lastAdded == null) {
+												insertPoint = this.getfirstAfterIdenditiesUnitsAfterInit(b);
+												b.getUnits().insertBefore(newStmt, insertPoint);
+											}else {
+												insertPoint = lastAdded;
+												b.getUnits().insertAfter(newStmt, insertPoint);
+											}
+											lastAdded = newStmt;
 											if(permutator.size() > 1) {
 												DummyBinaryClass.v().addOpaquePredicate(b, b.getUnits().getSuccOf(newStmt), newStmt);
 											}
