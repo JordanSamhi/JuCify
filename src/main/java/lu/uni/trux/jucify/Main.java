@@ -15,6 +15,7 @@ import soot.jimple.infoflow.InfoflowConfiguration.PathReconstructionMode;
 import soot.jimple.infoflow.android.InfoflowAndroidConfiguration;
 import soot.jimple.infoflow.android.InfoflowAndroidConfiguration.SootIntegrationMode;
 import soot.jimple.infoflow.android.SetupApplication;
+import soot.jimple.infoflow.android.manifest.ProcessManifest;
 import soot.jimple.toolkits.callgraph.CallGraph;
 
 /*-
@@ -46,6 +47,7 @@ import soot.jimple.toolkits.callgraph.CallGraph;
 public class Main {
 	public static void main(String[] args) throws Throwable {
 		System.out.println(String.format("%s v%s started on %s\n", Constants.JUCIFY, Constants.VERSION, new Date()));
+		
 		CommandLineOptions options = new CommandLineOptions(args);
 		String apk = options.getApk(),
 				platforms = options.getPlatforms();
@@ -57,7 +59,9 @@ public class Main {
 		sa.constructCallgraph();
 		CallGraph cg = Scene.v().getCallGraph();
 
-
+		ProcessManifest pm = new  ProcessManifest(apk);
+		CustomPrints.pinfo(String.format("Processing: %s", pm.getPackageName()));
+		
 		CustomPrints.pinfo("Loading binary call-graphs + java-to-native and native-to-java links...");
 		CallGraphPatcher cgp = new CallGraphPatcher(cg);
 		cgp.importBinaryCallGraph(files);
@@ -80,5 +84,6 @@ public class Main {
 			cgp.dotifyCallGraph(destination);
 			CustomPrints.psuccess("Callgraph exported.");
 		}
+		pm.close();
 	}
 }
