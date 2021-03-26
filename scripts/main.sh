@@ -27,6 +27,9 @@ APK_BASENAME=$(basename $APK_PATH .apk)
 APK_DIRNAME=$(dirname $APK_PATH)
 ENTRYPOINTS_DIR=$APK_DIRNAME/$APK_BASENAME"_result/"
 
+pkg_name=$(androguard axml $APK_PATH|grep package|tr ' ' '\n'|grep package|sed 's/package=\(.*\)/\1/g'|tr -d '"')
+print_info "Processing $pkg_name"
+
 print_info "Extracting Java-to-Binary and Binary-to-Java function calls..."
 ./launch_native_disclosurer.sh -f $APK_PATH
 
@@ -46,7 +49,7 @@ do
         if [[ $bnamef = $bname* ]]
         then
             python3 process_binary_callgraph.py -d $f -e $efile -w $APK_DIRNAME/$APK_BASENAME/$bname.callgraph
-            CALLGRAPHS_PATHS+=$(pwd)/$APK_DIRNAME/$APK_BASENAME/$bname.callgraph":"$(pwd)/$(dirname $efile)/$(basename $efile .entrypoints)"|"
+            CALLGRAPHS_PATHS+=$APK_DIRNAME/$APK_BASENAME/$bname.callgraph":"$(dirname $efile)/$(basename $efile .entrypoints)"|"
         fi
     done
 done
