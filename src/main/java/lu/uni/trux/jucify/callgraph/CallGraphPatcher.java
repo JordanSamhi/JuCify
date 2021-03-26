@@ -136,9 +136,9 @@ public class CallGraphPatcher {
 
 				// GENERATE BINARY NODES THAT ARE JAVA NATIVE CALLS AND INSTRUMENT THE BODY
 				for(Pair<String, SootMethod> p: javaToNative) {
+					name = p.getValue0();
+					m = p.getValue1();
 					if(!nodesToMethods.containsKey(name)) {
-						name = p.getValue0();
-						m = p.getValue1();
 						sm = DummyBinaryClass.v().addBinaryMethod(name,
 								m.getReturnType(), m.getModifiers(),
 								m.getParameterTypes());

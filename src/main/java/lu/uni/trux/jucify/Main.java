@@ -25,7 +25,11 @@ import soot.jimple.toolkits.callgraph.CallGraph;
  * %%
  * Copyright (C) 2021 Jordan Samhi
  * University of Luxembourg - Interdisciplinary Centre for
- * Security Reliability and Trust (SnT) - TruX - All rights reserved
+ * Security Reliability and Trust (SnT
+import soot.jimple.infoflow.android.InfoflowAndroidConfiguration;
+import soot.jimple.infoflow.android.InfoflowAndroidConfiguration.SootIntegrationMode;
+import soot.jimple.infoflow.android.SetupApplication;
+import soot.jimple.infoflow.android.manifest.ProcessManifest;) - TruX - All rights reserved
  *
  * %%
  * This program is free software: you can redistribute it and/or modify
