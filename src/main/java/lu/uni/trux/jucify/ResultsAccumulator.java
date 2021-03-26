@@ -72,7 +72,7 @@ public class ResultsAccumulator {
 	}
 
 	private String generateVector() {
-		return String.format("%s:%d:%d:%d:%d:%d:%d:%d:%d", this.getAppName(), this.getAnalysisElapsedTime(),
+		return String.format("%s,%d,%d,%d,%d,%d,%d,%d,%d", this.getAppName(), this.getAnalysisElapsedTime(),
 				this.getInstrumentationElapsedTime(), this.getTaintAnalysisElapsedTime(),
 				this.getNumberNewCallGraphNodes(), this.getNumberNewJavaToNativeCallGraphEdges(),
 				this.getNumberNewNativeToJavaCallGraphEdges(), this.getNumberNewCallGraphReachableNodes(),
