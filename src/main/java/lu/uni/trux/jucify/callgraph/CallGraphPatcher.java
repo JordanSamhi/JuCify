@@ -19,6 +19,7 @@ import guru.nidi.graphviz.model.Link;
 import guru.nidi.graphviz.model.MutableGraph;
 import guru.nidi.graphviz.model.MutableNode;
 import guru.nidi.graphviz.parse.Parser;
+import lu.uni.trux.jucify.ResultsAccumulator;
 import lu.uni.trux.jucify.instrumentation.DummyBinaryClass;
 import lu.uni.trux.jucify.utils.Constants;
 import lu.uni.trux.jucify.utils.CustomPrints;
@@ -49,9 +50,11 @@ import soot.util.dot.DotGraph;
 public class CallGraphPatcher {
 
 	private CallGraph cg;
+	private boolean raw;
 
-	public CallGraphPatcher(CallGraph cg) {
+	public CallGraphPatcher(CallGraph cg, boolean raw) {
 		this.cg = cg;
+		this.raw = raw;
 	}
 
 	public void importBinaryCallGraph(List<Pair<String, String>> files) {
@@ -77,7 +80,9 @@ public class CallGraphPatcher {
 				dot = new FileInputStream(dotFile);
 				g = new Parser().read(dot);
 				if(dot == null || g == null) {
-					CustomPrints.perror("Something wrong with dot file or mutable graph");
+					if(!raw) {
+						CustomPrints.perror("Something wrong with dot file or mutable graph");
+					}
 					System.exit(1);
 				}
 
@@ -142,6 +147,7 @@ public class CallGraphPatcher {
 						sm = DummyBinaryClass.v().addBinaryMethod(name,
 								m.getReturnType(), m.getModifiers(),
 								m.getParameterTypes());
+						ResultsAccumulator.v().incrementNumberNewCallGraphNodes();
 						nodesToMethods.put(name, sm);
 						for(SootClass sc: Scene.v().getApplicationClasses()) {
 							for(SootMethod met: sc.getMethods()) {
@@ -186,7 +192,10 @@ public class CallGraphPatcher {
 											if(ie.getMethod().equals(m)) {
 												ie.setMethodRef(sm.makeRef());
 												this.cg.addEdge(new Edge(met, stmt, sm));
-												CustomPrints.pinfo(String.format("Adding java-to-native Edge from %s to %s", met, sm));
+												ResultsAccumulator.v().incrementNumberNewJavaToNativeCallGraphEdges();
+												if(!raw) {
+													CustomPrints.pinfo(String.format("Adding java-to-native Edge from %s to %s", met, sm));
+												}
 											}
 										}
 									}
@@ -269,7 +278,10 @@ public class CallGraphPatcher {
 										}
 										Edge e = new Edge(sm, newStmt, met);
 										this.cg.addEdge(e);
-										CustomPrints.pinfo(String.format("Adding native-to-java Edge from %s to %s", sm, met));
+										ResultsAccumulator.v().incrementNumberNewNativeToJavaCallGraphEdges();
+										if(!raw) {
+											CustomPrints.pinfo(String.format("Adding native-to-java Edge from %s to %s", sm, met));
+										}
 									}
 								}
 
@@ -289,6 +301,7 @@ public class CallGraphPatcher {
 					name = Utils.removeNodePrefix(node.name().toString());
 					if(!nodesToMethods.containsKey(name)) {
 						sm = DummyBinaryClass.v().addBinaryMethod(name, VoidType.v(), Modifier.PUBLIC, new ArrayList<>());
+						ResultsAccumulator.v().incrementNumberNewCallGraphNodes();
 						nodesToMethods.put(name, sm);
 					}
 				}
@@ -308,7 +321,9 @@ public class CallGraphPatcher {
 			}
 
 		} catch (IOException e) {
-			CustomPrints.perror(e.getMessage());
+			if(!raw) {
+				CustomPrints.perror(e.getMessage());
+			}
 			System.exit(1);
 		}
 	}

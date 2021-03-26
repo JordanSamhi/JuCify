@@ -26,10 +26,12 @@ public class FlowAnalysis {
 
 	private SetupApplication sa;
 	private InfoflowCFG icfg;
+	private boolean raw;
 
-	public FlowAnalysis(SetupApplication sa) {
+	public FlowAnalysis(SetupApplication sa, boolean raw) {
 		this.sa = sa;
 		this.icfg = new InfoflowCFG();
+		this.raw = raw;
 	}
 
 	public void run() {
@@ -50,8 +52,10 @@ public class FlowAnalysis {
 				CustomPrints.perror(e.getMessage());
 			}
 		else {
-			CustomPrints.perror("Taint wrapper definition file not found at "
-					+ twFile.getAbsolutePath());
+			if(!this.raw) {
+				CustomPrints.perror("Taint wrapper definition file not found at "
+						+ twFile.getAbsolutePath());
+			}
 		}
 		easyTaintWrapper.setAggressiveMode(true);
 		taintWrapper = easyTaintWrapper;
@@ -66,24 +70,28 @@ public class FlowAnalysis {
 		}
 		if(results != null) {
 			if(results.getResults() != null && !results.getResults().isEmpty()) {
+				ResultsAccumulator.v().setHasFlowThroughNative(true);
 				for (ResultSinkInfo sink : results.getResults().keySet()) {
 					for (ResultSourceInfo source : results.getResults().get(sink)) {
 						List<Stmt> path = Arrays.asList(source.getPath());
 						if(pathContainCallToNativeMethods(path)) {
 							if (path != null && !path.isEmpty()) {
-								CustomPrints.psuccess("Found path through native code: ");
-								System.out.println("  - From " + source);
-								System.out.println("    - Detailed path:");
-								for(Stmt s : path) {
-									System.out.println("       " + s + " => in method: " + icfg.getMethodOf(s));
+								if(!this.raw) {
+									CustomPrints.psuccess("Found path through native code: ");
+									System.out.println("  - From " + source);
+									System.out.println("    - Detailed path:");
+									for(Stmt s : path) {
+										System.out.println("       " + s + " => in method: " + icfg.getMethodOf(s));
+									}
+									System.out.println("  - To " + sink);
 								}
-								System.out.println("  - To " + sink);
 							}
 						}
 					}
 				}
-			}else {
-				CustomPrints.pwarning("No Flow found.");
+				if(!this.raw) {
+					CustomPrints.pwarning("No Flow found.");
+				}
 			}
 		}
 	}

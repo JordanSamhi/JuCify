@@ -54,6 +54,7 @@ public class CommandLineOptions {
 	private static final Triplet<String, String, String> TAINT_ANALYSIS = new Triplet<String, String, String>("taintanalysis", "ta", "Run taint analysis on APK");
 	private static final Triplet<String, String, String> PLATFORMS =
 			new Triplet<String, String, String>("platforms", "p", "Android platforms folder");
+	private static final Triplet<String, String, String> RAW = new Triplet<String, String, String>("raw", "r", "Print raw results");
 
 	private Options options, firstOptions;
 	private CommandLineParser parser;
@@ -108,6 +109,14 @@ public class CommandLineOptions {
 				.required(true)
 				.build();
 		
+		final Option raw = Option.builder(RAW.getValue1())
+				.longOpt(RAW.getValue0())
+				.desc(RAW.getValue2())
+				.hasArg(false)
+				.argName(RAW.getValue0())
+				.required(false)
+				.build();
+		
 		final Option to = Option.builder(TIMEOUT.getValue1())
 				.longOpt(TIMEOUT.getValue0())
 				.desc(TIMEOUT.getValue2())
@@ -152,6 +161,7 @@ public class CommandLineOptions {
 		this.options.addOption(to);
 		this.options.addOption(files);
 		this.options.addOption(export);
+		this.options.addOption(raw);
 		this.options.addOption(ta);
 
 		for(Option o : this.firstOptions.getOptions()) {
@@ -201,5 +211,9 @@ public class CommandLineOptions {
 	
 	public int getTimeout() {
 		return Integer.parseInt(this.cmdLine.getOptionValue(TIMEOUT.getValue0()));
+	}
+	
+	public boolean hasRaw() {
+		return this.cmdLine.hasOption(RAW.getValue1());
 	}
 }

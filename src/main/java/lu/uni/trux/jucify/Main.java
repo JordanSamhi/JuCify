@@ -3,7 +3,9 @@ package lu.uni.trux.jucify;
 import java.util.Date;
 import java.util.List;
 
+import org.apache.commons.io.FilenameUtils;
 import org.javatuples.Pair;
+import org.slf4j.profiler.StopWatch;
 
 import lu.uni.trux.jucify.callgraph.CallGraphPatcher;
 import lu.uni.trux.jucify.utils.CommandLineOptions;
@@ -50,9 +52,14 @@ import soot.jimple.infoflow.android.manifest.ProcessManifest;) - TruX - All righ
 
 public class Main {
 	public static void main(String[] args) throws Throwable {
-		System.out.println(String.format("%s v%s started on %s\n", Constants.JUCIFY, Constants.VERSION, new Date()));
-		
+		StopWatch analysisTime = new StopWatch("Analysis");
+		analysisTime.start("Analysis");
 		CommandLineOptions options = new CommandLineOptions(args);
+
+		if(!options.hasRaw()) {
+			System.out.println(String.format("%s v%s started on %s\n", Constants.JUCIFY, Constants.VERSION, new Date()));
+		}
+		
 		String apk = options.getApk(),
 				platforms = options.getPlatforms();
 		List<Pair<String, String>> files = options.getFiles();
@@ -64,30 +71,63 @@ public class Main {
 		CallGraph cg = Scene.v().getCallGraph();
 
 		ProcessManifest pm = new  ProcessManifest(apk);
-		CustomPrints.pinfo(String.format("Processing: %s", pm.getPackageName()));
+		if(!options.hasRaw()) {
+			CustomPrints.pinfo(String.format("Processing: %s", pm.getPackageName()));
+		}
+
+		if(!options.hasRaw()) {
+			CustomPrints.pinfo("Loading binary call-graphs + java-to-native and native-to-java links...");
+		}
 		
-		CustomPrints.pinfo("Loading binary call-graphs + java-to-native and native-to-java links...");
-		CallGraphPatcher cgp = new CallGraphPatcher(cg);
+		int sizeCallGraphBeforePatch = cg.size();
+		
+		StopWatch instrumentationTime = new StopWatch("Instrumentation");
+		instrumentationTime.start("Instrumentation");
+		CallGraphPatcher cgp = new CallGraphPatcher(cg, options.hasRaw());
 		cgp.importBinaryCallGraph(files);
-		CustomPrints.psuccess("Binary callgraph imported.");
+		if(!options.hasRaw()) {
+			CustomPrints.psuccess("Binary callgraph imported.");
+		}
+		instrumentationTime.stop();
+		ResultsAccumulator.v().setInstrumentationElapsedTime(instrumentationTime.elapsedTime() / 1000000000);
+		
+		int sizeCallGraphAfterPatch = cg.size();
 
 		sa.getConfig().setSootIntegrationMode(SootIntegrationMode.UseExistingInstance);
 		sa.getConfig().getPathConfiguration().setPathReconstructionMode(PathReconstructionMode.Precise);
 		sa.getConfig().setCodeEliminationMode(CodeEliminationMode.NoCodeElimination);
-		
+
+		StopWatch taintAnalysisTime = new StopWatch("Taint Analysis");
+		taintAnalysisTime.start("Taint Analysis");
 		if(options.hasTaintAnalysis()) {
-			CustomPrints.pinfo("Taint Analysis in progress...");
-			FlowAnalysis fa = new  FlowAnalysis(sa);
+			if(!options.hasRaw()) {
+				CustomPrints.pinfo("Taint Analysis in progress...");
+			}
+			FlowAnalysis fa = new  FlowAnalysis(sa, options.hasRaw());
 			fa.run();
-			CustomPrints.psuccess("Taint Analysis performed.");
+			if(!options.hasRaw()) {
+				CustomPrints.psuccess("Taint Analysis performed.");
+			}
 		}
+		taintAnalysisTime.stop();
+		ResultsAccumulator.v().setTaintAnalysisElapsedTime(taintAnalysisTime.elapsedTime() / 1000000000);
 
 		if(options.hasExportCallGraph()) {
 			String destination = options.getExportCallGraphDestination();
-			CustomPrints.pinfo(String.format("Exporting call graph to %s...", destination));
+			if(!options.hasRaw()) {
+				CustomPrints.pinfo(String.format("Exporting call graph to %s...", destination));
+			}
 			cgp.dotifyCallGraph(destination);
-			CustomPrints.psuccess("Callgraph exported.");
+			if(!options.hasRaw()) {
+				CustomPrints.psuccess("Callgraph exported.");
+			}
 		}
 		pm.close();
+		
+		analysisTime.stop();
+		ResultsAccumulator.v().setAppName(FilenameUtils.getBaseName(options.getApk()));
+		ResultsAccumulator.v().setAnalysisElapsedTime(analysisTime.elapsedTime() / 1000000000);
+		ResultsAccumulator.v().setNumberNewCallGraphReachableNodes(sizeCallGraphAfterPatch - sizeCallGraphBeforePatch);
+		ResultsAccumulator.v().printVectorResults();
 	}
 }
