@@ -59,7 +59,7 @@ public class Main {
 		if(!options.hasRaw()) {
 			System.out.println(String.format("%s v%s started on %s\n", Constants.JUCIFY, Constants.VERSION, new Date()));
 		}
-		
+
 		String apk = options.getApk(),
 				platforms = options.getPlatforms();
 		List<Pair<String, String>> files = options.getFiles();
@@ -78,9 +78,9 @@ public class Main {
 		if(!options.hasRaw()) {
 			CustomPrints.pinfo("Loading binary call-graphs + java-to-native and native-to-java links...");
 		}
-		
+
 		int sizeCallGraphBeforePatch = cg.size();
-		
+
 		StopWatch instrumentationTime = new StopWatch("Instrumentation");
 		instrumentationTime.start("Instrumentation");
 		CallGraphPatcher cgp = new CallGraphPatcher(cg, options.hasRaw());
@@ -90,7 +90,7 @@ public class Main {
 		}
 		instrumentationTime.stop();
 		ResultsAccumulator.v().setInstrumentationElapsedTime(instrumentationTime.elapsedTime() / 1000000000);
-		
+
 		int sizeCallGraphAfterPatch = cg.size();
 
 		sa.getConfig().setSootIntegrationMode(SootIntegrationMode.UseExistingInstance);
@@ -123,11 +123,13 @@ public class Main {
 			}
 		}
 		pm.close();
-		
+
 		analysisTime.stop();
 		ResultsAccumulator.v().setAppName(FilenameUtils.getBaseName(options.getApk()));
 		ResultsAccumulator.v().setAnalysisElapsedTime(analysisTime.elapsedTime() / 1000000000);
 		ResultsAccumulator.v().setNumberNewCallGraphReachableNodes(sizeCallGraphAfterPatch - sizeCallGraphBeforePatch);
-		ResultsAccumulator.v().printVectorResults();
+		if(options.hasRaw()) {
+			ResultsAccumulator.v().printVectorResults();
+		}
 	}
 }
