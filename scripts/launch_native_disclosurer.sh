@@ -2,7 +2,7 @@
 
 . ./common.sh --source-only
 
-while getopts f:p option
+while getopts f:p:r option
 do
     case "${option}"
         in
