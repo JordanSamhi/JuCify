@@ -86,32 +86,30 @@ public class Utils {
 		String ret = split[1];
 		String[] splitSplit = split[0].split("\\(");
 		String params = null;
-		String currentType = null;
 		StringBuilder sb = new StringBuilder();
 		sb.append("(");
 		if(splitSplit.length != 0) {
 			params = splitSplit[1];
-			List<Integer> indexes = new ArrayList<Integer>();
-			for(int i = 0 ; i < params.length() ; i++) {
-				if(params.charAt(i) == ';') {
-					indexes.add(i);
-				}
-			}
-			int c = 0;
-			for(Integer i: indexes) {
-				params = params.substring(0, i + 1 + c) + " " + params.substring(i + 1 + c);
-				c++;
-			}
-			String[] splitParams = params.split(" ");
-			for(int i = 0 ; i < splitParams.length ; i++) {
-				currentType = splitParams[i];
-				if(!currentType.isEmpty()) {
-					sb.append(getCompactTypesToJimpleTypes(currentType));
-					if(i != splitParams.length - 1) {
-						sb.append(",");
+
+			List<String> paramsList = new ArrayList<String>();
+			int i = 0;
+			StringBuilder tmpStr = null;
+			while(i < params.length()) {
+				char c = params.charAt(i);
+				if(c == 'L' || c == '[') {
+					tmpStr = new StringBuilder();
+					while(c != ';') {
+						c = params.charAt(i);
+						tmpStr.append(c);
+						i++;
 					}
+					paramsList.add(getCompactTypesToJimpleTypes(tmpStr.toString()));
+				}else {
+					paramsList.add(getCompactTypesToJimpleTypes(String.valueOf(c)));
 				}
+				i++;
 			}
+			sb.append(String.join(",", paramsList));
 		}
 		sb.append(")");
 		ret = getCompactTypesToJimpleTypes(ret);
