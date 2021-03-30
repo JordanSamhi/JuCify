@@ -105,9 +105,11 @@ public class Utils {
 			String[] splitParams = params.split(" ");
 			for(int i = 0 ; i < splitParams.length ; i++) {
 				currentType = splitParams[i];
-				sb.append(getCompactTypesToJimpleTypes(currentType));
-				if(i != splitParams.length - 1) {
-					sb.append(",");
+				if(!currentType.isEmpty()) {
+					sb.append(getCompactTypesToJimpleTypes(currentType));
+					if(i != splitParams.length - 1) {
+						sb.append(",");
+					}
 				}
 			}
 		}
@@ -136,7 +138,7 @@ public class Utils {
 		}
 		return compactTypesToJimpleTypes.get(key);
 	}
-	
+
 	public static Type getTypeFromString(String type) {
 		if(type.equals("boolean")) {
 			return BooleanType.v();
@@ -160,11 +162,11 @@ public class Utils {
 			return RefType.v(type);
 		}
 	}
-	
+
 	public static String toJimpleSignature(String clazz, String ret, String method, String params) {
 		return String.format("<%s: %s %s%s>", clazz, ret, method, params);
 	}
-	
+
 	public static String getClassNameFromSignature(String sig) {
 		String tmp = sig.split(" ")[0];
 		return tmp.substring(1, tmp.length() - 1);
@@ -193,14 +195,14 @@ public class Utils {
 		}
 		return parameters;
 	}
-	
+
 	public static boolean isFromNativeCode(SootMethod sm) {
 		if(sm.getDeclaringClass().equals(Scene.v().getSootClass(Constants.DUMMY_BINARY_CLASS))) {
 			return true;
 		}
 		return false;
 	}
-	 
+
 	public static void addPhantomMethod(String newSig) {
 		String className = Utils.getClassNameFromSignature(newSig),
 				methodName = Utils.getMethodNameFromSignature(newSig),
@@ -208,7 +210,7 @@ public class Utils {
 		List<String> paramsList = Utils.getParametersNamesFromSignature(newSig);
 		addPhantomMethod(className, methodName, returnType, paramsList);
 	}
-	
+
 	public static void addPhantomMethod(String className, String methodName, String returnType, List<String> paramsList) {
 		List<Type> params = new ArrayList<Type>();
 		for(String s: paramsList) {

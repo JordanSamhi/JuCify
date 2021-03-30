@@ -107,7 +107,7 @@ public class CallGraphPatcher {
 					SootMethod nativeMethod = Scene.v().getMethod(newSig);
 					for(SootClass sc: Scene.v().getApplicationClasses()) {
 						for(SootMethod met: sc.getMethods()) {
-							if(met.hasActiveBody()) {
+							if(met.isConcrete()) {
 								for(Unit u: met.retrieveActiveBody().getUnits()) {
 									stmt = (Stmt) u;
 									if(stmt.containsInvokeExpr()) {
