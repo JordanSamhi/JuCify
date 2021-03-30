@@ -1,7 +1,6 @@
 package lu.uni.trux.jucify;
 
 import java.util.Date;
-import java.util.LinkedList;
 import java.util.List;
 
 import org.apache.commons.io.FilenameUtils;
@@ -12,9 +11,7 @@ import lu.uni.trux.jucify.callgraph.CallGraphPatcher;
 import lu.uni.trux.jucify.utils.CommandLineOptions;
 import lu.uni.trux.jucify.utils.Constants;
 import lu.uni.trux.jucify.utils.CustomPrints;
-import soot.G;
 import soot.Scene;
-import soot.SootClass;
 import soot.jimple.infoflow.InfoflowConfiguration.CodeEliminationMode;
 import soot.jimple.infoflow.InfoflowConfiguration.PathReconstructionMode;
 import soot.jimple.infoflow.android.InfoflowAndroidConfiguration;
@@ -22,7 +19,6 @@ import soot.jimple.infoflow.android.InfoflowAndroidConfiguration.SootIntegration
 import soot.jimple.infoflow.android.SetupApplication;
 import soot.jimple.infoflow.android.manifest.ProcessManifest;
 import soot.jimple.toolkits.callgraph.CallGraph;
-import soot.options.Options;
 
 /*-
  * #%L
@@ -102,8 +98,6 @@ public class Main {
 		sa.getConfig().getPathConfiguration().setPathReconstructionMode(PathReconstructionMode.Precise);
 		sa.getConfig().setCodeEliminationMode(CodeEliminationMode.NoCodeElimination);
 
-		System.out.println(Scene.v().getMethod("<DummyBinaryClass: java.lang.String Java_org_arguslab_native_1source_MainActivity_getImei(android.content.Context)>").retrieveActiveBody());
-		
 		StopWatch taintAnalysisTime = new StopWatch("Taint Analysis");
 		taintAnalysisTime.start("Taint Analysis");
 		if(options.hasTaintAnalysis()) {
