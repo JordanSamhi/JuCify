@@ -2,13 +2,16 @@
 
 . ./common.sh --source-only
 
-while getopts d:f:p option
+RAW=false
+
+while getopts d:f:p:r option
 do
     case "${option}"
         in
         f) FILE=${OPTARG};;
         d) ENTRYPOINT_DIR=${OPTARG};;
         p) PDF=true;;
+        r) RAW=true;;
     esac
 done
 
@@ -47,7 +50,11 @@ DST=$DST_FLD$NEW_FLD
 mkdir -p $DST
 unzip -o $FILE -d $DST &> /dev/null
 
-print_info "Extracting CallGraph..."
+
+if [ "$RAW" = false ]
+then
+    print_info "Extracting CallGraph..."
+fi
 
 for f in $ENTRYPOINT_DIR/*result
 do
@@ -57,7 +64,10 @@ do
         LIBNAME=$(basename $ff .so)
         if [ $LIBNAME_WITH_INFO == $LIBNAME ]
         then
-            print_info "Processing $LIBNAME..."
+            if [ "$RAW" = false ]
+            then
+                print_info "Processing $LIBNAME..."
+            fi
             ./retdec/bin/retdec-decompiler.py $ff $OPTS &> /dev/null
             ls -1 $ff.*|grep -vE ".*\.dot|.*\.pdf"|parallel rm {}
         fi

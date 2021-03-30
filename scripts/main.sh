@@ -2,12 +2,15 @@
 
 . ./common.sh --source-only
 
-while getopts f:p: option
+RAW=false
+
+while getopts f:p:r option
 do
     case "${option}"
         in
         f) APK_PATH=${OPTARG};;
         p) PLATFORMS_PATH=${OPTARG};;
+        r) RAW=true;;
     esac
 done
 
@@ -28,18 +31,35 @@ APK_DIRNAME=$(dirname $APK_PATH)
 ENTRYPOINTS_DIR=$APK_DIRNAME/$APK_BASENAME"_result/"
 
 pkg_name=$(androguard axml $APK_PATH|grep package|tr ' ' '\n'|grep package|sed 's/package=\(.*\)/\1/g'|tr -d '"')
-print_info "Processing $pkg_name"
+if [ "$RAW" = false ]
+then
+    print_info "Processing $pkg_name"
+fi
 
-print_info "Extracting Java-to-Binary and Binary-to-Java function calls..."
+if [ "$RAW" = false ]
+then
+    print_info "Extracting Java-to-Binary and Binary-to-Java function calls..."
+fi
 ./launch_native_disclosurer.sh -f $APK_PATH
 
-print_info "Generating Binary Callgraph per Library..."
-./launch_retdec.sh -f $APK_PATH -d $ENTRYPOINTS_DIR
+if [ "$RAW" = false ]
+then
+    print_info "Generating Binary Callgraph per Library..."
+fi
+if [ "$RAW" = false ]
+then
+    ./launch_retdec.sh -f $APK_PATH -d $ENTRYPOINTS_DIR
+else
+    ./launch_retdec.sh -f $APK_PATH -d $ENTRYPOINTS_DIR -r
+fi
 
 
 CALLGRAPHS_PATHS_TO_ENTRYPOINTS=""
 
-print_info "Extracting Relevant Callgraph parts..."
+if [ "$RAW" = false ]
+then
+    print_info "Extracting Relevant Callgraph parts..."
+fi
 for efile in $(ls -1 $ENTRYPOINTS_DIR/*.entrypoints)
 do
     bname=$(basename $efile .result.entrypoints)
@@ -54,4 +74,9 @@ do
     done
 done
 
-java -jar ../target/JuCify-0.1-jar-with-dependencies.jar -a $APK_PATH -p $PLATFORMS_PATH -f $CALLGRAPHS_PATHS -ta
+if [ "$RAW" = false ]
+then
+    java -jar ../target/JuCify-0.1-jar-with-dependencies.jar -a $APK_PATH -p $PLATFORMS_PATH -f $CALLGRAPHS_PATHS -ta
+else
+    java -jar ../target/JuCify-0.1-jar-with-dependencies.jar -a $APK_PATH -p $PLATFORMS_PATH -f $CALLGRAPHS_PATHS -ta -r
+fi
