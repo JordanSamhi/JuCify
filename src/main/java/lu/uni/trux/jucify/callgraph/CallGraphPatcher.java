@@ -128,6 +128,9 @@ public class CallGraphPatcher {
 						String invokeeSig = split[7].trim();
 						pairNewSig = Utils.compactSigtoJimpleSig(invokeeSig);
 						newSig = Utils.toJimpleSignature(invokeeClass, pairNewSig.getValue1(), invokeeMethod, pairNewSig.getValue0());
+						if(!Scene.v().containsMethod(newSig)) {
+							Utils.addPhantomMethod(newSig);
+						}
 						sm = Scene.v().getMethod(newSig);
 						javaTargets = nativeToJava.get(target);
 						if(javaTargets == null) {

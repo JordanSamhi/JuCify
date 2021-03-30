@@ -8,12 +8,24 @@ import java.util.Map;
 import org.javatuples.Pair;
 
 import soot.Body;
+import soot.BooleanType;
+import soot.ByteType;
+import soot.CharType;
+import soot.DoubleType;
+import soot.FloatType;
+import soot.IntType;
 import soot.Local;
+import soot.LongType;
 import soot.PatchingChain;
+import soot.RefType;
 import soot.Scene;
+import soot.ShortType;
+import soot.SootClass;
 import soot.SootMethod;
 import soot.SootMethodRef;
+import soot.Type;
 import soot.Unit;
+import soot.VoidType;
 import soot.jimple.Jimple;
 
 /*-
@@ -125,6 +137,30 @@ public class Utils {
 		return compactTypesToJimpleTypes.get(key);
 	}
 	
+	public static Type getTypeFromString(String type) {
+		if(type.equals("boolean")) {
+			return BooleanType.v();
+		}else if(type.equals("byte")) {
+			return ByteType.v();
+		}else if(type.equals("char")) {
+			return CharType.v();
+		}else if(type.equals("short")) {
+			return ShortType.v();
+		}else if(type.equals("int")) {
+			return IntType.v();
+		}else if(type.equals("long")) {
+			return LongType.v();
+		}else if(type.equals("float")) {
+			return FloatType.v();
+		}else if(type.equals("double")) {
+			return DoubleType.v();
+		}else if(type.equals("void")) {
+			return VoidType.v();
+		}else {
+			return RefType.v(type);
+		}
+	}
+	
 	public static String toJimpleSignature(String clazz, String ret, String method, String params) {
 		return String.format("<%s: %s %s%s>", clazz, ret, method, params);
 	}
@@ -148,8 +184,12 @@ public class Utils {
 		String params = tmp.substring(tmp.indexOf("(") + 1, tmp.indexOf(")"));
 		String[] paramsArray = params.split(",");
 		List<String> parameters = new ArrayList<String>();
+		String p = null;
 		for(int i = 0 ; i < paramsArray.length ; i++) {
-			parameters.add(paramsArray[i]);
+			p = paramsArray[i];
+			if(!p.isEmpty()) {
+				parameters.add(p);
+			}
 		}
 		return parameters;
 	}
@@ -159,5 +199,24 @@ public class Utils {
 			return true;
 		}
 		return false;
+	}
+	 
+	public static void addPhantomMethod(String newSig) {
+		String className = Utils.getClassNameFromSignature(newSig),
+				methodName = Utils.getMethodNameFromSignature(newSig),
+				returnType = Utils.getReturnNameFromSignature(newSig);
+		List<String> paramsList = Utils.getParametersNamesFromSignature(newSig);
+		addPhantomMethod(className, methodName, returnType, paramsList);
+	}
+	
+	public static void addPhantomMethod(String className, String methodName, String returnType, List<String> paramsList) {
+		List<Type> params = new ArrayList<Type>();
+		for(String s: paramsList) {
+			params.add(Utils.getTypeFromString(s));
+		}
+		SootClass sc = Scene.v().getSootClass(className);
+		SootMethod sm = new SootMethod(methodName, params, Utils.getTypeFromString(returnType));
+		sm.setPhantom(true);
+		sc.addMethod(sm);
 	}
 }
