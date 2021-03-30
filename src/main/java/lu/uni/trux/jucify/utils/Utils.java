@@ -106,8 +106,8 @@ public class Utils {
 					paramsList.add(getCompactTypesToJimpleTypes(tmpStr.toString()));
 				}else {
 					paramsList.add(getCompactTypesToJimpleTypes(String.valueOf(c)));
+					i++;
 				}
-				i++;
 			}
 			sb.append(String.join(",", paramsList));
 		}
