@@ -168,7 +168,7 @@ public class DummyBinaryClass {
 		Local l = lg.generateLocal(t);
 		List<Unit> unitsToAdd = new ArrayList<Unit>();
 		unitsToAdd.add(Jimple.v().newAssignStmt(l, Jimple.v().newNewExpr((RefType) t)));
-		if(!Scene.v().containsMethod(String.format("<%s: %s $s()>", t, Constants.VOID, Constants.INIT))) {
+		if(!Scene.v().containsMethod(String.format("<%s: %s %s()>", t, Constants.VOID, Constants.INIT))) {
 			Utils.addPhantomMethod(t.toString(), Constants.INIT, Constants.VOID, new ArrayList<String>());
 		}
 		unitsToAdd.add(Jimple.v().newInvokeStmt(
