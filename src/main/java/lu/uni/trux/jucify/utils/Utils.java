@@ -90,12 +90,15 @@ public class Utils {
 		sb.append("(");
 		if(splitSplit.length != 0) {
 			params = splitSplit[1];
-
 			List<String> paramsList = new ArrayList<String>();
 			int i = 0;
 			StringBuilder tmpStr = null;
 			while(i < params.length()) {
 				char c = params.charAt(i);
+				if(c == ' ') {
+					i++;
+					continue;
+				}
 				if(c == 'L' || c == '[') {
 					tmpStr = new StringBuilder();
 					while(c != ';') {
