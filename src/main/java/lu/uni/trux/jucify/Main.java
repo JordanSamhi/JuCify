@@ -11,6 +11,7 @@ import lu.uni.trux.jucify.callgraph.CallGraphPatcher;
 import lu.uni.trux.jucify.utils.CommandLineOptions;
 import lu.uni.trux.jucify.utils.Constants;
 import lu.uni.trux.jucify.utils.CustomPrints;
+import lu.uni.trux.jucify.utils.Utils;
 import soot.Scene;
 import soot.jimple.infoflow.InfoflowConfiguration.CodeEliminationMode;
 import soot.jimple.infoflow.InfoflowConfiguration.PathReconstructionMode;

@@ -132,7 +132,7 @@ public class Utils {
 		if(key.startsWith("L")) {
 			return key.substring(1, key.length() - 1).replace("/", ".");
 		}else if(key.startsWith("[")) {
-			return String.format("%s[]", key.substring(1));
+			return String.format("%s[]", key.substring(2, key.length() - 1).replace("/", "."));
 		}
 		return compactTypesToJimpleTypes.get(key);
 	}
