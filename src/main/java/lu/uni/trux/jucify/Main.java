@@ -127,8 +127,11 @@ public class Main {
 		ResultsAccumulator.v().setNumberNewCallGraphReachableNodes(cgp.getNewReachableNodesNative().size() + cgp.getNewReachableNodesJava().size());
 		ResultsAccumulator.v().setNumberNewCallGraphReachableNodesNative(cgp.getNewReachableNodesNative().size());
 		ResultsAccumulator.v().setNumberNewCallGraphReachableNodesJava(cgp.getNewReachableNodesJava().size());
+		ResultsAccumulator.v().setNumberNewEdges(sizeCallGraphAfterPatch - sizeCallGraphBeforePatch);
 		if(options.hasRaw()) {
 			ResultsAccumulator.v().printVectorResults();
+		}else {
+			ResultsAccumulator.v().printResults();
 		}
 	}
 }

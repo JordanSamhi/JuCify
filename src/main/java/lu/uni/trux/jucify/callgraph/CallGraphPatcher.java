@@ -7,11 +7,9 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 
 import org.javatuples.Pair;
 
@@ -54,12 +52,12 @@ public class CallGraphPatcher {
 
 	private CallGraph cg;
 	private boolean raw;
-	private Set<SootMethod> newReachableNodes;
+	private List <SootMethod> newReachableNodes;
 
 	public CallGraphPatcher(CallGraph cg, boolean raw) {
 		this.cg = cg;
 		this.raw = raw;
-		this.newReachableNodes = new HashSet<SootMethod>();
+		this.newReachableNodes = new ArrayList<SootMethod>();
 	}
 
 	public void importBinaryCallGraph(List<Pair<String, String>> files) {
@@ -155,7 +153,6 @@ public class CallGraphPatcher {
 						sm = DummyBinaryClass.v().addBinaryMethod(name,
 								m.getReturnType(), m.getModifiers(),
 								m.getParameterTypes());
-						ResultsAccumulator.v().incrementNumberNewCallGraphNodes();
 						nodesToMethods.put(name, sm);
 						for(SootClass sc: Scene.v().getApplicationClasses()) {
 							for(SootMethod met: sc.getMethods()) {
@@ -311,7 +308,6 @@ public class CallGraphPatcher {
 					name = Utils.removeNodePrefix(node.name().toString());
 					if(!nodesToMethods.containsKey(name)) {
 						sm = DummyBinaryClass.v().addBinaryMethod(name, VoidType.v(), Modifier.PUBLIC, new ArrayList<>());
-						ResultsAccumulator.v().incrementNumberNewCallGraphNodes();
 						nodesToMethods.put(name, sm);
 					}
 				}
@@ -390,29 +386,33 @@ public class CallGraphPatcher {
 		dg.plot(destination);
 	}
 
-	public Set<SootMethod> getNewReachableNodes() {
+	public List<SootMethod> getNewReachableNodes() {
 		return newReachableNodes;
 	}
 
-	public void setNewReachableNodes(Set<SootMethod> newReachableNodes) {
+	public void setNewReachableNodes(List<SootMethod> newReachableNodes) {
 		this.newReachableNodes = newReachableNodes;
 	}
 	
-	public Set<SootMethod> getNewReachableNodesNative() {
+	public List<SootMethod> getNewReachableNodesNative() {
 		return getNewReachableNodes(true);
 	}
 	
-	public Set<SootMethod> getNewReachableNodesJava() {
+	public List<SootMethod> getNewReachableNodesJava() {
 		return getNewReachableNodes(false);
 	}
 	
-	private Set<SootMethod> getNewReachableNodes(boolean b) {
-		Set<SootMethod> s = new HashSet<SootMethod>();
+	private List<SootMethod> getNewReachableNodes(boolean b) {
+		List<SootMethod> s = new ArrayList<SootMethod>();
 		for(SootMethod sm: this.newReachableNodes) {
 			if(sm.getDeclaringClass().getType().equals(RefType.v(Constants.DUMMY_BINARY_CLASS)) && b) {
-				s.add(sm);
+				if(!s.contains(sm)) {
+					s.add(sm);
+				}
 			}else if (!sm.getDeclaringClass().getType().equals(RefType.v(Constants.DUMMY_BINARY_CLASS)) && !b){
-				s.add(sm);
+				if(!s.contains(sm) && !Utils.wasMethodPreviouslyReachableInCallGraph(cg, sm)) {
+					s.add(sm);
+				}
 			}
 		}
 		return s;

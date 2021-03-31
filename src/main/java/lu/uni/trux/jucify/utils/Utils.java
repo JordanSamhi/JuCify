@@ -2,6 +2,7 @@ package lu.uni.trux.jucify.utils;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
@@ -27,6 +28,8 @@ import soot.Type;
 import soot.Unit;
 import soot.VoidType;
 import soot.jimple.Jimple;
+import soot.jimple.toolkits.callgraph.CallGraph;
+import soot.jimple.toolkits.callgraph.Edge;
 
 /*-
  * #%L
@@ -221,5 +224,19 @@ public class Utils {
 		SootMethod sm = new SootMethod(methodName, params, Utils.getTypeFromString(returnType));
 		sm.setPhantom(true);
 		sc.addMethod(sm);
+	}
+	
+	public static boolean wasMethodPreviouslyReachableInCallGraph(CallGraph cg, SootMethod sm) {
+		Iterator<Edge> it = cg.edgesInto(sm);
+		Edge next = null;
+		boolean found = false;
+		while(it.hasNext()) {
+			next = it.next();
+			if(!next.src().getDeclaringClass().getType().equals(RefType.v(Constants.DUMMY_BINARY_CLASS))) {
+				found = true;
+				break;
+			}
+		}
+		return found;
 	}
 }

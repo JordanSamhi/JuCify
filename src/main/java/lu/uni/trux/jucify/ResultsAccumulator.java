@@ -34,12 +34,12 @@ public class ResultsAccumulator {
 	private long analysisElapsedTime;
 	private long taintAnalysisElapsedTime;
 	private long instrumentationElapsedTime;
-	private int numberNewCallGraphNodes;
 	private int numberNewJavaToNativeCallGraphEdges;
 	private int numberNewNativeToJavaCallGraphEdges;
 	private int numberNewCallGraphReachableNodesJava;
 	private int numberNewCallGraphReachableNodesNative;
 	private int numberNewCallGraphReachableNodes;
+	private int numberNewEdges;
 	private boolean hasFlowThroughNative;
 
 	private ResultsAccumulator () {
@@ -47,7 +47,6 @@ public class ResultsAccumulator {
 		this.setAnalysisElapsedTime(0);
 		this.setInstrumentationElapsedTime(0);
 		this.setTaintAnalysisElapsedTime(0);
-		this.setNumberNewCallGraphNodes(0);
 		this.setNumberNewJavaToNativeCallGraphEdges(0);
 		this.setNumberNewNativeToJavaCallGraphEdges(0);
 		this.setNumberNewCallGraphReachableNodes(0);
@@ -76,10 +75,25 @@ public class ResultsAccumulator {
 	private String generateVector() {
 		return String.format("%s,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d", this.getAppName(), this.getAnalysisElapsedTime(),
 				this.getInstrumentationElapsedTime(), this.getTaintAnalysisElapsedTime(),
-				this.getNumberNewCallGraphNodes(), this.getNumberNewJavaToNativeCallGraphEdges(),
-				this.getNumberNewNativeToJavaCallGraphEdges(), this.getNumberNewCallGraphReachableNodes(),
-				this.getNumberNewCallGraphReachableNodesJava(), this.getNumberNewCallGraphReachableNodesNative(),
+				this.getNumberNewJavaToNativeCallGraphEdges(), this.getNumberNewNativeToJavaCallGraphEdges(),
+				this.getNumberNewCallGraphReachableNodes(), this.getNumberNewCallGraphReachableNodesJava(),
+				this.getNumberNewCallGraphReachableNodesNative(), this.getNumberNewEdges(),
 				this.hasFlowThroughNative ? 1 : 0);
+	}
+	
+	public void printResults() {
+		System.out.println("Results:");
+		System.out.println(String.format(" - App name: %s", this.getAppName()));
+		System.out.println(String.format(" - Analysis elapsed time: %d", this.getAnalysisElapsedTime()));
+		System.out.println(String.format(" - Instrumentation elapsed time: %d", this.getInstrumentationElapsedTime()));
+		System.out.println(String.format(" - Taint Analysis elapsed time: %d", this.getTaintAnalysisElapsedTime()));
+		System.out.println(String.format(" - Number new Java-to-Native Call-Graph edges: %d", this.getNumberNewJavaToNativeCallGraphEdges()));
+		System.out.println(String.format(" - Number new Native-to-Java Call-Graph edges: %d", this.getNumberNewNativeToJavaCallGraphEdges()));
+		System.out.println(String.format(" - Number new Call-Graph reachable nodes: %d", this.getNumberNewCallGraphReachableNodes()));
+		System.out.println(String.format(" - Number new Call-Graph reachable nodes Java: %d", this.getNumberNewCallGraphReachableNodesJava()));
+		System.out.println(String.format(" - Number new Call-Graph reachable nodes Native: %d", this.getNumberNewCallGraphReachableNodesNative()));
+		System.out.println(String.format(" - Number new Call-Graph edges: %d", this.getNumberNewEdges()));
+		System.out.println(String.format(" - Has flow through native: %s", this.hasFlowThroughNative ? "Yes" : "No"));
 	}
 
 	public long getAnalysisElapsedTime() {
@@ -106,14 +120,6 @@ public class ResultsAccumulator {
 		this.instrumentationElapsedTime = instrumentationElapsedTime;
 	}
 
-	public int getNumberNewCallGraphNodes() {
-		return numberNewCallGraphNodes;
-	}
-
-	public void setNumberNewCallGraphNodes(int numberNewCallGraphNodes) {
-		this.numberNewCallGraphNodes = numberNewCallGraphNodes;
-	}
-
 	public int getNumberNewJavaToNativeCallGraphEdges() {
 		return numberNewJavaToNativeCallGraphEdges;
 	}
@@ -132,10 +138,6 @@ public class ResultsAccumulator {
 
 	public void incrementNumberNewJavaToNativeCallGraphEdges() {
 		this.setNumberNewJavaToNativeCallGraphEdges(this.getNumberNewJavaToNativeCallGraphEdges() + 1);
-	}
-
-	public void incrementNumberNewCallGraphNodes() {
-		this.setNumberNewCallGraphNodes(this.getNumberNewCallGraphNodes() + 1);
 	}
 
 	public void incrementNumberNewNativeToJavaCallGraphEdges() {
@@ -172,5 +174,13 @@ public class ResultsAccumulator {
 
 	public void setNumberNewCallGraphReachableNodesNative(int numberNewCallGraphReachableNodesNative) {
 		this.numberNewCallGraphReachableNodesNative = numberNewCallGraphReachableNodesNative;
+	}
+
+	public int getNumberNewEdges() {
+		return numberNewEdges;
+	}
+
+	public void setNumberNewEdges(int numberNewEdges) {
+		this.numberNewEdges = numberNewEdges;
 	}
 }
