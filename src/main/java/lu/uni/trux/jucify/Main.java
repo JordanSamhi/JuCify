@@ -27,11 +27,7 @@ import soot.jimple.toolkits.callgraph.CallGraph;
  * %%
  * Copyright (C) 2021 Jordan Samhi
  * University of Luxembourg - Interdisciplinary Centre for
- * Security Reliability and Trust (SnT
-import soot.jimple.infoflow.android.InfoflowAndroidConfiguration;
-import soot.jimple.infoflow.android.InfoflowAndroidConfiguration.SootIntegrationMode;
-import soot.jimple.infoflow.android.SetupApplication;
-import soot.jimple.infoflow.android.manifest.ProcessManifest;) - TruX - All rights reserved
+ * Security Reliability and Trust (SnT) - TruX - All rights reserved
  *
  * %%
  * This program is free software: you can redistribute it and/or modify
@@ -128,7 +124,9 @@ public class Main {
 		analysisTime.stop();
 		ResultsAccumulator.v().setAppName(FilenameUtils.getBaseName(options.getApk()));
 		ResultsAccumulator.v().setAnalysisElapsedTime(analysisTime.elapsedTime() / 1000000000);
-		ResultsAccumulator.v().setNumberNewCallGraphReachableNodes(sizeCallGraphAfterPatch - sizeCallGraphBeforePatch);
+		ResultsAccumulator.v().setNumberNewCallGraphReachableNodes(cgp.getNewReachableNodesNative().size() + cgp.getNewReachableNodesJava().size());
+		ResultsAccumulator.v().setNumberNewCallGraphReachableNodesNative(cgp.getNewReachableNodesNative().size());
+		ResultsAccumulator.v().setNumberNewCallGraphReachableNodesJava(cgp.getNewReachableNodesJava().size());
 		if(options.hasRaw()) {
 			ResultsAccumulator.v().printVectorResults();
 		}

@@ -7,9 +7,11 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import org.javatuples.Pair;
 
@@ -27,6 +29,7 @@ import lu.uni.trux.jucify.utils.Utils;
 import soot.Body;
 import soot.Local;
 import soot.Modifier;
+import soot.RefType;
 import soot.Scene;
 import soot.SootClass;
 import soot.SootMethod;
@@ -51,10 +54,12 @@ public class CallGraphPatcher {
 
 	private CallGraph cg;
 	private boolean raw;
+	private Set<SootMethod> newReachableNodes;
 
 	public CallGraphPatcher(CallGraph cg, boolean raw) {
 		this.cg = cg;
 		this.raw = raw;
+		this.newReachableNodes = new HashSet<SootMethod>();
 	}
 
 	public void importBinaryCallGraph(List<Pair<String, String>> files) {
@@ -195,6 +200,7 @@ public class CallGraphPatcher {
 											if(ie.getMethod().equals(m)) {
 												ie.setMethodRef(sm.makeRef());
 												this.cg.addEdge(new Edge(met, stmt, sm));
+												this.newReachableNodes.add(sm);
 												ResultsAccumulator.v().incrementNumberNewJavaToNativeCallGraphEdges();
 												if(!raw) {
 													CustomPrints.pinfo(String.format("Adding java-to-native Edge from %s to %s", met, sm));
@@ -281,6 +287,7 @@ public class CallGraphPatcher {
 										}
 										Edge e = new Edge(sm, newStmt, met);
 										this.cg.addEdge(e);
+										this.newReachableNodes.add(met);
 										ResultsAccumulator.v().incrementNumberNewNativeToJavaCallGraphEdges();
 										if(!raw) {
 											CustomPrints.pinfo(String.format("Adding native-to-java Edge from %s to %s", sm, met));
@@ -319,6 +326,7 @@ public class CallGraphPatcher {
 					if(stmt != null) {
 						Edge e = new Edge(from, stmt, to);
 						this.cg.addEdge(e);
+						this.newReachableNodes.add(to);
 					}
 				}
 			}
@@ -380,5 +388,33 @@ public class CallGraphPatcher {
 			dg.drawEdge(next.src().getName(), next.tgt().getName());
 		}
 		dg.plot(destination);
+	}
+
+	public Set<SootMethod> getNewReachableNodes() {
+		return newReachableNodes;
+	}
+
+	public void setNewReachableNodes(Set<SootMethod> newReachableNodes) {
+		this.newReachableNodes = newReachableNodes;
+	}
+	
+	public Set<SootMethod> getNewReachableNodesNative() {
+		return getNewReachableNodes(true);
+	}
+	
+	public Set<SootMethod> getNewReachableNodesJava() {
+		return getNewReachableNodes(false);
+	}
+	
+	private Set<SootMethod> getNewReachableNodes(boolean b) {
+		Set<SootMethod> s = new HashSet<SootMethod>();
+		for(SootMethod sm: this.newReachableNodes) {
+			if(sm.getDeclaringClass().getType().equals(RefType.v(Constants.DUMMY_BINARY_CLASS)) && b) {
+				s.add(sm);
+			}else if (!sm.getDeclaringClass().getType().equals(RefType.v(Constants.DUMMY_BINARY_CLASS)) && !b){
+				s.add(sm);
+			}
+		}
+		return s;
 	}
 }

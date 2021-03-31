@@ -37,6 +37,8 @@ public class ResultsAccumulator {
 	private int numberNewCallGraphNodes;
 	private int numberNewJavaToNativeCallGraphEdges;
 	private int numberNewNativeToJavaCallGraphEdges;
+	private int numberNewCallGraphReachableNodesJava;
+	private int numberNewCallGraphReachableNodesNative;
 	private int numberNewCallGraphReachableNodes;
 	private boolean hasFlowThroughNative;
 
@@ -72,10 +74,11 @@ public class ResultsAccumulator {
 	}
 
 	private String generateVector() {
-		return String.format("%s,%d,%d,%d,%d,%d,%d,%d,%d", this.getAppName(), this.getAnalysisElapsedTime(),
+		return String.format("%s,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d", this.getAppName(), this.getAnalysisElapsedTime(),
 				this.getInstrumentationElapsedTime(), this.getTaintAnalysisElapsedTime(),
 				this.getNumberNewCallGraphNodes(), this.getNumberNewJavaToNativeCallGraphEdges(),
 				this.getNumberNewNativeToJavaCallGraphEdges(), this.getNumberNewCallGraphReachableNodes(),
+				this.getNumberNewCallGraphReachableNodesJava(), this.getNumberNewCallGraphReachableNodesNative(),
 				this.hasFlowThroughNative ? 1 : 0);
 	}
 
@@ -153,5 +156,21 @@ public class ResultsAccumulator {
 
 	public void setHasFlowThroughNative(boolean hasFlowThroughNative) {
 		this.hasFlowThroughNative = hasFlowThroughNative;
+	}
+
+	public int getNumberNewCallGraphReachableNodesJava() {
+		return numberNewCallGraphReachableNodesJava;
+	}
+
+	public void setNumberNewCallGraphReachableNodesJava(int numberNewCallGraphReachableNodesJava) {
+		this.numberNewCallGraphReachableNodesJava = numberNewCallGraphReachableNodesJava;
+	}
+
+	public int getNumberNewCallGraphReachableNodesNative() {
+		return numberNewCallGraphReachableNodesNative;
+	}
+
+	public void setNumberNewCallGraphReachableNodesNative(int numberNewCallGraphReachableNodesNative) {
+		this.numberNewCallGraphReachableNodesNative = numberNewCallGraphReachableNodesNative;
 	}
 }
