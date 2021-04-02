@@ -59,7 +59,7 @@ fi
 for f in $ENTRYPOINT_DIR/*result
 do
     LIBNAME_WITH_INFO=$(basename $f .so.result)
-    for ff in $(find $DST/lib/armeabi-v7a/ -name "*.so")
+    for ff in $(find $DST/lib/ -name "*.so")
     do
         LIBNAME=$(basename $ff .so)
         if [ $LIBNAME_WITH_INFO == $LIBNAME ]

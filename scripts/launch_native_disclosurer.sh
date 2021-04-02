@@ -23,7 +23,7 @@ fi
 
 DST=$(dirname $FILE)/
 python3.7 main.py $FILE --out $DST
-check_return $? "Something went wront with retdec" ""
+check_return $? "Something went wront with nativedisclosurer" ""
 
 LOC=$DST/$(basename $FILE .apk)"_result"
 for f in $LOC/*result

@@ -63,7 +63,7 @@ fi
 for efile in $(ls -1 $ENTRYPOINTS_DIR/*.entrypoints)
 do
     bname=$(basename $efile .result.entrypoints)
-    for f in $(find $APK_DIRNAME/$APK_BASENAME/lib/armeabi-v7a/ -name "*.dot")
+    for f in $(find $APK_DIRNAME/$APK_BASENAME/lib/ -name "*.dot")
     do
         bnamef=$(basename $f)
         if [[ $bnamef = $bname* ]]
