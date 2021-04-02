@@ -107,6 +107,9 @@ public class CallGraphPatcher {
 					String target = split[3].trim();
 					Pair<String, String> pairNewSig = Utils.compactSigtoJimpleSig(sig);
 					String newSig = Utils.toJimpleSignature(clazz, pairNewSig.getValue1(), method, pairNewSig.getValue0());
+					if(!Scene.v().containsMethod(newSig)) {
+						Utils.addPhantomMethod(newSig);
+					}
 					SootMethod nativeMethod = Scene.v().getMethod(newSig);
 					for(SootClass sc: Scene.v().getApplicationClasses()) {
 						for(SootMethod met: sc.getMethods()) {
@@ -297,6 +300,8 @@ public class CallGraphPatcher {
 									final Local retLoc = local;
 									DummyBinaryClass.v().addOpaquePredicateForReturn(b, b.getUnits().getLast(), Jimple.v().newReturnStmt(retLoc));
 								}
+								
+								
 								b.validate();
 							}
 						}
