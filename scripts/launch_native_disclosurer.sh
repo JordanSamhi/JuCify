@@ -22,11 +22,14 @@ then
 fi
 
 DST=$(dirname $FILE)/
-python3.7 main.py $FILE --out $DST
+python3 main.py $FILE --out $DST
 check_return $? "Something went wront with nativedisclosurer" ""
 
 LOC=$DST/$(basename $FILE .apk)"_result"
-for f in $LOC/*result
-do
-    tail -n +2 $f|awk -F, '{print $4}'|tr -d " " > $f.entrypoints
-done
+if [ $(ls $LOC/|grep "*.result" |wc -l) -gt 0 ]
+then
+    for f in $LOC/*result
+    do
+        tail -n +2 $f|awk -F, '{print $4}'|tr -d " " > $f.entrypoints
+    done
+fi
