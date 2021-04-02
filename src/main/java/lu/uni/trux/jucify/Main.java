@@ -1,6 +1,9 @@
 package lu.uni.trux.jucify;
 
+import java.io.FileWriter;
+import java.util.ArrayList;
 import java.util.Date;
+import java.util.Iterator;
 import java.util.List;
 
 import org.apache.commons.io.FilenameUtils;
@@ -12,6 +15,7 @@ import lu.uni.trux.jucify.utils.CommandLineOptions;
 import lu.uni.trux.jucify.utils.Constants;
 import lu.uni.trux.jucify.utils.CustomPrints;
 import soot.Scene;
+import soot.SootMethod;
 import soot.jimple.infoflow.InfoflowConfiguration.CodeEliminationMode;
 import soot.jimple.infoflow.InfoflowConfiguration.PathReconstructionMode;
 import soot.jimple.infoflow.android.InfoflowAndroidConfiguration;
@@ -19,6 +23,7 @@ import soot.jimple.infoflow.android.InfoflowAndroidConfiguration.SootIntegration
 import soot.jimple.infoflow.android.SetupApplication;
 import soot.jimple.infoflow.android.manifest.ProcessManifest;
 import soot.jimple.toolkits.callgraph.CallGraph;
+import soot.jimple.toolkits.callgraph.Edge;
 
 /*-
  * #%L
@@ -55,7 +60,7 @@ public class Main {
 		if(!options.hasRaw()) {
 			System.out.println(String.format("%s v%s started on %s\n", Constants.JUCIFY, Constants.VERSION, new Date()));
 		}
-		
+
 		String apk = options.getApk(),
 				platforms = options.getPlatforms();
 		List<Pair<String, String>> files = options.getFiles();
@@ -76,8 +81,8 @@ public class Main {
 		}
 
 		int sizeCallGraphBeforePatch = cg.size();
-		
-		
+
+
 		StopWatch instrumentationTime = new StopWatch("Instrumentation");
 		instrumentationTime.start("Instrumentation");
 		CallGraphPatcher cgp = new CallGraphPatcher(cg, options.hasRaw());
@@ -118,6 +123,37 @@ public class Main {
 			if(!options.hasRaw()) {
 				CustomPrints.psuccess("Callgraph exported.");
 			}
+		}
+
+		if(options.hasExportCallGraphTxt()) {
+			FileWriter writer = new FileWriter(options.getExportCallGraphTxtDestination()); 
+			Iterator<Edge> it = cg.iterator();
+			Iterator<Edge> itMet = null;
+			List<String> tgts = new ArrayList<String>();
+			Edge next = null;
+			SootMethod tgt = null;
+			List<SootMethod> visitedMethods = new ArrayList<SootMethod>();
+			while(it.hasNext()) {
+				next = it.next();
+				SootMethod src = next.src();
+				if(!visitedMethods.contains(src)) {
+					visitedMethods.add(src);
+					itMet = cg.edgesOutOf(src);
+					tgts.clear();
+					while(itMet.hasNext()) {
+						tgt = itMet.next().tgt();
+						if(tgt.isDeclared()) {
+							if(!tgts.contains(tgt.getSignature())) {
+								tgts.add(tgt.getSignature());
+							}
+						}
+					}
+					if(src.isDeclared()) {
+						writer.write(String.format("%s ==> ['%s\\n']%s", src, String.join("\\n','", tgts), System.lineSeparator()));
+					}
+				}
+			}
+			writer.close();
 		}
 		pm.close();
 
