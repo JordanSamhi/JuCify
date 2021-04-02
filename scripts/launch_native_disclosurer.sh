@@ -26,7 +26,7 @@ python3 main.py $FILE --out $DST
 check_return $? "Something went wront with nativedisclosurer" ""
 
 LOC=$DST/$(basename $FILE .apk)"_result"
-if [ $(ls $LOC/|grep "*.result" |wc -l) -gt 0 ]
+if [ $(ls $LOC/|grep ".result$" |wc -l) -gt 0 ]
 then
     for f in $LOC/*result
     do

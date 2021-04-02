@@ -60,7 +60,7 @@ if [ "$RAW" = false ]
 then
     print_info "Extracting Relevant Callgraph parts..."
 fi
-if [ $(ls $ENTRYPOINTS_DIR/|grep "*.entrypoints" |wc -l) -gt 0 ]
+if [ $(ls $ENTRYPOINTS_DIR/|grep ".entrypoints$" |wc -l) -gt 0 ]
 then
     for efile in $(ls -1 $ENTRYPOINTS_DIR/*.entrypoints)
     do
