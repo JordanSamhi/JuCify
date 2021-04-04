@@ -30,7 +30,7 @@ APK_BASENAME=$(basename $APK_PATH .apk)
 APK_DIRNAME=$(dirname $APK_PATH)
 ENTRYPOINTS_DIR=$APK_DIRNAME/$APK_BASENAME"_result/"
 
-pkg_name=$(androguard axml $APK_PATH|grep "package="|tr ' ' '\n'|grep package|sed 's/package=\(.*\)/\1/g'|tr -d '"')
+pkg_name=$(androguard axml $APK_PATH|grep "package="|tr ' ' '\n'|grep package|sed 's/package=\(.*\)/\1/g'|tr -d '"'|tr -d ">")
 if [ "$RAW" = false ]
 then
     print_info "Processing $pkg_name"
