@@ -3,14 +3,17 @@
 . ./common.sh --source-only
 
 RAW=false
+TAINT_ANALYSIS=false
 
-while getopts f:p:r option
+while getopts f:p:rc:t option
 do
     case "${option}"
         in
         f) APK_PATH=${OPTARG};;
         p) PLATFORMS_PATH=${OPTARG};;
         r) RAW=true;;
+        c) EXPORT_CG_DST=${OPTARG};;
+        t) TAINT_ANALYSIS=true;;
     esac
 done
 
@@ -77,14 +80,26 @@ then
     done
 fi
 
+OPTS=""
+
+if [ "$RAW" = true ]
+then
+    OPTS+="-r "
+fi
+
+if [ "$TAINT_ANALYSIS" = true ]
+then
+    OPTS+="-ta "
+fi
+
+if [ ! -z "$EXPORT_CG_DST" ]
+then
+    OPTS+="-c $EXPORT_CG_DST"
+fi
+
 if [ ! -z "$CALLGRAPHS_PATHS" ]
 then
-    if [ "$RAW" = false ]
-    then
-        java -jar ../target/JuCify-0.1-jar-with-dependencies.jar -a $APK_PATH -p $PLATFORMS_PATH -f $CALLGRAPHS_PATHS -ta
-    else
-        java -jar ../target/JuCify-0.1-jar-with-dependencies.jar -a $APK_PATH -p $PLATFORMS_PATH -f $CALLGRAPHS_PATHS -ta -r
-    fi
+    java -jar ../target/JuCify-0.1-jar-with-dependencies.jar -a $APK_PATH -p $PLATFORMS_PATH -f $CALLGRAPHS_PATHS $OPTS
 else
     print_info "Not executing JuCify"
 fi
