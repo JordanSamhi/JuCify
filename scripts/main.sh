@@ -4,15 +4,16 @@
 
 RAW=false
 TAINT_ANALYSIS=false
+EXPORT_CG_DST=false
 
-while getopts f:p:rc:t option
+while getopts f:p:rct option
 do
     case "${option}"
         in
         f) APK_PATH=${OPTARG};;
         p) PLATFORMS_PATH=${OPTARG};;
         r) RAW=true;;
-        c) EXPORT_CG_DST=${OPTARG};;
+        c) EXPORT_CG_DST=true;;
         t) TAINT_ANALYSIS=true;;
     esac
 done
@@ -92,9 +93,9 @@ then
     OPTS+="-ta "
 fi
 
-if [ ! -z "$EXPORT_CG_DST" ]
+if [ "$TAINT_ANALYSIS" = true ]
 then
-    OPTS+="-c $EXPORT_CG_DST"
+    OPTS+="-c $APK_DIRNAME/"$APK_BASENAME"_cg.txt"
 fi
 
 if [ ! -z "$CALLGRAPHS_PATHS" ]
