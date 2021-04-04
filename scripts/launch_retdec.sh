@@ -36,7 +36,7 @@ if [ "$PDF" = true ]
 then
     OPTS="--backend-emit-cg --graph-format pdf"
 else
-    OPTS="--backend-emit-cg"
+    OPTS="--backend-emit-cg --backend-cg-conversion manual"
 fi
 
 if [ ! -f "$FILE" ]
