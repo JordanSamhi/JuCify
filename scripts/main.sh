@@ -93,7 +93,7 @@ then
     OPTS+="-ta "
 fi
 
-if [ "$TAINT_ANALYSIS" = true ]
+if [ "$EXPORT_CG_DST" = true ]
 then
     OPTS+="-c $APK_DIRNAME/"$APK_BASENAME"_cg.txt"
 fi
