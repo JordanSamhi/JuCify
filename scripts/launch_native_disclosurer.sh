@@ -23,7 +23,7 @@ fi
 
 DST=$(dirname $FILE)/
 python3 main.py $FILE --out $DST
-check_return $? "Something went wront with nativedisclosurer" ""
+check_return $? "Something went wrong with nativedisclosurer" ""
 
 LOC=$DST/$(basename $FILE .apk)"_result"
 if [ $(ls $LOC/|grep ".result$" |wc -l) -gt 0 ]

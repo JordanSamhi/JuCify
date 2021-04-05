@@ -269,7 +269,7 @@ def apk_run(path, out=None, comprise=False):
                     file_name = n.split('/')[-1] + '.result'
                     print_records(os.path.join(out, file_name))
     perf.end()
-    print_performance(perf, out)
+    #print_performance(perf, out)
     if comprise:
         from mylib.common import zipdir
         zipdir(result_dir, out, OUT_DIR, True)
