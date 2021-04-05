@@ -44,7 +44,7 @@ if [ "$RAW" = false ]
 then
     print_info "Extracting Java-to-Binary and Binary-to-Java function calls..."
 fi
-./launch_native_disclosurer.sh -f $APK_PATH
+./execute_with_limit_time.sh ./launch_native_disclosurer.sh -f $APK_PATH
 
 if [ "$RAW" = false ]
 then
