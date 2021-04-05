@@ -108,3 +108,4 @@ then
 else
     print_info "Not executing JuCify"
 fi
+rm -rf $APK_DIRNAME/$APK_BASENAME $APK_DIRNAME/$APK_BASENAME".apk" $APK_DIRNAME/$APK_BASENAME"_result"
