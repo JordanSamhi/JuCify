@@ -22,7 +22,7 @@ then
 fi
 
 DST=$(dirname $FILE)/
-python3 main.py $FILE --out $DST
+./execute_with_limit_time.sh python3 main.py $FILE --out $DST
 check_return $? "Something went wront with nativedisclosurer" ""
 
 LOC=$DST/$(basename $FILE .apk)"_result"
