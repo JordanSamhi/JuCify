@@ -6,12 +6,19 @@ def cls_2_dot_pattern(cls_name):
     return cls_name
 
 
+def sig_refine(sig):
+    """ To correct deformed signture patterns. e.g., signatures contains
+    spaces.
+    """
+    sig = sig.replace(' ', '')
+    return sig
+
 class Invokee:
     def __init__(self, method):
         self.cls_name = cls_2_dot_pattern(method.cls.name) if method.cls is not None else None
         self.desc = method.cls.desc if method.cls is not None else None
         self.method_name = method.name
-        self.signature = method.signature
+        self.signature = sig_refine(method.signature)
         self._static = method.static
 
     def __str__(self):
@@ -29,7 +36,7 @@ class Record:
              static_method=None, obfuscated=None, static_export=False):
         self.cls = cls_2_dot_pattern(cls_name)
         self.method_name = method_name
-        self.signature = signature
+        self.signature = sig_refine(signature)
         self.func_ptr = func_ptr
         self.symbol_name = symbol_name
         self.static_method = static_method

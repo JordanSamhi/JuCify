@@ -15,6 +15,7 @@ JNI_LOADER = 'JNI_OnLoad'
 # value for "LengthLimiter" to limit the length of path a state goes through.
 # refer to: https://docs.angr.io/core-concepts/pathgroups
 MAX_LENGTH = 500
+DYNAMIC_ANALYSIS_LENGTH = 1000
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
@@ -77,10 +78,13 @@ def extract_names(symbol):
 
 def record_dynamic_jni_functions(proj, jvm_ptr, jenv_ptr, dex=None):
     state = get_prepared_jni_onload_state(proj, jvm_ptr, jenv_ptr, dex)
-    tech = LengthLimiter(MAX_LENGTH)
+    tech = LengthLimiter(DYNAMIC_ANALYSIS_LENGTH)
     simgr = proj.factory.simgr(state)
     simgr.use_technique(tech)
-    simgr.run()
+    try:
+        simgr.run()
+    except Exception as e:
+        logger.warning(f'Collect dynamically registered JNI function failed: {e}')
 
 
 def jni_env_prepare_in_object(proj):
