@@ -45,6 +45,7 @@ then
     print_info "Extracting Java-to-Binary and Binary-to-Java function calls..."
 fi
 ./execute_with_limit_time.sh ./launch_native_disclosurer.sh -f $APK_PATH
+wait
 
 if [ "$RAW" = false ]
 then
@@ -53,8 +54,10 @@ fi
 if [ "$RAW" = false ]
 then
     ./launch_retdec.sh -f $APK_PATH -d $ENTRYPOINTS_DIR
+    wait
 else
     ./launch_retdec.sh -f $APK_PATH -d $ENTRYPOINTS_DIR -r
+    wait
 fi
 
 
@@ -75,6 +78,7 @@ then
             if [[ $bnamef = $bname* ]]
             then
                 python3 process_binary_callgraph.py -d $f -e $efile -w $APK_DIRNAME/$APK_BASENAME/$bname.callgraph
+                wait
                 CALLGRAPHS_PATHS+=$APK_DIRNAME/$APK_BASENAME/$bname.callgraph":"$(dirname $efile)/$(basename $efile .entrypoints)"|"
             fi
         done
