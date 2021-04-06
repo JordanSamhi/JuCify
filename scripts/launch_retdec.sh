@@ -48,7 +48,7 @@ DST_FLD=$(dirname $FILE)"/"
 NEW_FLD=$(basename $FILE .apk)
 DST=$DST_FLD$NEW_FLD
 mkdir -p $DST
-unzip -o $FILE -d $DST &> /dev/null
+unzip -o $FILE -d $DST > /dev/null 2>&1
 
 
 if [ "$RAW" = false ]
@@ -68,7 +68,7 @@ do
             then
                 print_info "Processing $LIBNAME..."
             fi
-            ./execute_with_limit_time.sh ./retdec/bin/retdec-decompiler.py $ff $OPTS &> /dev/null
+            ./execute_with_limit_time.sh ./retdec/bin/retdec-decompiler.py $ff $OPTS > /dev/null 2>&1
             wait
             ls -1 $ff.*|grep -vE ".*\.dot|.*\.pdf"|parallel rm {}
         fi
