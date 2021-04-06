@@ -68,7 +68,7 @@ do
             then
                 print_info "Processing $LIBNAME..."
             fi
-            ./retdec/bin/retdec-decompiler.py $ff $OPTS &> /dev/null
+            ./execute_with_limit_time.sh ./retdec/bin/retdec-decompiler.py $ff $OPTS &> /dev/null
             ls -1 $ff.*|grep -vE ".*\.dot|.*\.pdf"|parallel rm {}
         fi
     done
