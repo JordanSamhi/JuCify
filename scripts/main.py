@@ -31,7 +31,7 @@ logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
 
 # uncomment below to output log information
-logging.disable(level=logging.CRITICAL)
+# logging.disable(level=logging.CRITICAL)
 
 
 class Performance:
@@ -41,7 +41,7 @@ class Performance:
         self._num_analyzed_func = 0
         self._num_analyzed_so = 0
         self._num_timeout = 0
-        self._dynamic_func_reg_analysis_failed = False
+        self._dynamic_func_reg_analysis_timeout = 0
 
     def start(self):
         self._start_at = timeit.default_timer()
@@ -58,8 +58,8 @@ class Performance:
     def add_timeout(self):
         self._num_timeout += 1
 
-    def set_dynamic_reg_failed(self):
-        self._dynamic_func_reg_analysis_failed = True
+    def add_dynamic_reg_timeout(self):
+        self._dynamic_func_reg_analysis_timeout += 1
 
     @property
     def elapsed(self):
@@ -69,8 +69,8 @@ class Performance:
             return self._end_at - self._start_at
 
     def __str__(self):
-        s = 'elapsed,analyzed_so,analyzed_func,timeout,dymamic_timeout\n'
-        s += f'{self.elapsed},{self._num_analyzed_so},{self._num_analyzed_func},{self._num_timeout},{self._dynamic_func_reg_analysis_failed}'
+        s = 'elapsed,analyzed_so,analyzed_func,func_timeout,dymamic_timeout\n'
+        s += f'{self.elapsed},{self._num_analyzed_so},{self._num_analyzed_func},{self._num_timeout},{self._dynamic_func_reg_analysis_timeout}'
         return s
 
 
@@ -245,12 +245,11 @@ def apk_run(path, out=None, comprise=False):
                         logger.warning(f'Project object generation failed for {n}')
                         continue
                     if dynamic_timeout:
-                        perf.set_dynamic_reg_failed()
+                        perf.add_dynamic_reg_timeout()
                     perf.add_analyzed_so()
                     for jni_func, record in Record.RECORDS.items():
                         # wrap the analysis with its own process to limit the
                         # analysis time.
-                        # print(record.symbol_name)
                         p = mp.Process(target=analyze_jni_function,
                                 args=(*(jni_func, proj, jvm, jenv, dex, returns),))
                         p.start()
@@ -294,15 +293,18 @@ def find_all_jni_functions(so_file, dex):
         record_static_jni_functions(proj, dex)
         if proj.loader.find_symbol(JNI_LOADER):
             # wrap the analysis with its own process to limit the analysis time.
-            p = mp.Process(target=record_dynamic_jni_functions,
-                    args=(*(proj, jvm_ptr, jenv_ptr, dex),))
-            p.start()
-            p.join(DYNAMIC_ANALYSIS_TIME)
-            if p.is_alive():
-                dynamic_analysis_timeout = True
-                p.terminate()
-                p.join()
-                logger.warning('Timeout when analyzing dynamic registration')
+            with mp.Manager() as mgr:
+                records = mgr.dict()
+                p = mp.Process(target=record_dynamic_jni_functions,
+                        args=(*(proj, jvm_ptr, jenv_ptr, dex, records),))
+                p.start()
+                p.join(DYNAMIC_ANALYSIS_TIME)
+                if p.is_alive():
+                    dynamic_analysis_timeout = True
+                    p.terminate()
+                    p.join()
+                    logger.warning('Timeout when analyzing dynamic registration')
+                Record.RECORDS.update(records)
     return proj, jvm_ptr, jenv_ptr, dynamic_analysis_timeout
 
 

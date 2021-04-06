@@ -76,7 +76,7 @@ def extract_names(symbol):
     return cls_name, method_name, sig
 
 
-def record_dynamic_jni_functions(proj, jvm_ptr, jenv_ptr, dex=None):
+def record_dynamic_jni_functions(proj, jvm_ptr, jenv_ptr, dex=None, records=None):
     state = get_prepared_jni_onload_state(proj, jvm_ptr, jenv_ptr, dex)
     tech = LengthLimiter(DYNAMIC_ANALYSIS_LENGTH)
     simgr = proj.factory.simgr(state)
@@ -85,6 +85,10 @@ def record_dynamic_jni_functions(proj, jvm_ptr, jenv_ptr, dex=None):
         simgr.run()
     except Exception as e:
         logger.warning(f'Collect dynamically registered JNI function failed: {e}')
+    # for multiprocess running. param "records" should be a
+    # multiprocessing.Manager().dict()
+    if records is not None:
+        records.update(Record.RECORDS)
 
 
 def jni_env_prepare_in_object(proj):
@@ -153,7 +157,8 @@ def analyze_jni_function(func_addr, proj, jvm_ptr, jenv_ptr, dex=None, returns=N
         simgr.run()
     except Exception as e:
         logger.warning(f'Analysis JNI function failed: {e}')
-    # for multiprocess running.
+    # for multiprocess running. param "returns" should be a
+    # multiprocessing.Manager().dict()
     if returns is not None:
         invokees = Record.RECORDS.get(func_addr).get_invokees()
         if invokees is not None:
