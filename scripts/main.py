@@ -16,7 +16,7 @@ from jni_interfaces.utils import (record_static_jni_functions, clean_records,
         jni_env_prepare_in_object, JNI_LOADER)
 
 # the longest time in seconds to analyze 1 JNI function.
-WAIT_TIME = 180
+WAIT_TIME = 20
 # the longest time in seconds for dynamic registration analysis
 DYNAMIC_ANALYSIS_TIME = 600
 
@@ -268,7 +268,7 @@ def apk_run(path, out=None, comprise=False):
                     file_name = n.split('/')[-1] + '.result'
                     print_records(os.path.join(out, file_name))
     perf.end()
-    print_performance(perf, out)
+    #print_performance(perf, out)
     if comprise:
         from mylib.common import zipdir
         zipdir(result_dir, out, OUT_DIR, True)
