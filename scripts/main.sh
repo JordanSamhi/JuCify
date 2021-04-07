@@ -53,7 +53,7 @@ then
 fi
 if [ "$RAW" = false ]
 then
-    ./launch_retdec.sh -f $APK_PATH -d $ENTRYPOINTS_DIR
+    ./execute_with_limit_time.sh ./launch_retdec.sh -f $APK_PATH -d $ENTRYPOINTS_DIR
     wait
 else
     ./launch_retdec.sh -f $APK_PATH -d $ENTRYPOINTS_DIR -r
