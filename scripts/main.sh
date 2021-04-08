@@ -56,7 +56,7 @@ then
     ./execute_with_limit_time.sh ./launch_retdec.sh -f $APK_PATH -d $ENTRYPOINTS_DIR
     wait
 else
-    ./launch_retdec.sh -f $APK_PATH -d $ENTRYPOINTS_DIR -r
+    ./execute_with_limit_time.sh ./launch_retdec.sh -f $APK_PATH -d $ENTRYPOINTS_DIR -r
     wait
 fi
 
