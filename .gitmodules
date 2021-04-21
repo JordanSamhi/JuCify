@@ -1,0 +1,3 @@
+[submodule "nativediscloser"]
+	path = nativediscloser
+	url = git@github.com:gaojun0816/nativediscloser.git
