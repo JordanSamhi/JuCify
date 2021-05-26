@@ -6,10 +6,14 @@ import java.io.FileReader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import org.javatuples.Pair;
 
@@ -25,7 +29,9 @@ import lu.uni.trux.jucify.utils.Constants;
 import lu.uni.trux.jucify.utils.CustomPrints;
 import lu.uni.trux.jucify.utils.Utils;
 import soot.Body;
+import soot.IntType;
 import soot.Local;
+import soot.LongType;
 import soot.Modifier;
 import soot.RefType;
 import soot.Scene;
@@ -39,9 +45,11 @@ import soot.VoidType;
 import soot.javaToJimple.LocalGenerator;
 import soot.jimple.AssignStmt;
 import soot.jimple.IdentityStmt;
+import soot.jimple.IntConstant;
 import soot.jimple.InvokeExpr;
 import soot.jimple.InvokeStmt;
 import soot.jimple.Jimple;
+import soot.jimple.LongConstant;
 import soot.jimple.NewExpr;
 import soot.jimple.Stmt;
 import soot.jimple.toolkits.callgraph.CallGraph;
@@ -76,6 +84,8 @@ public class CallGraphPatcher {
 
 		Map<String, SootMethod> nodesToMethods = new HashMap<String, SootMethod>();
 
+	    Pattern list_pattern = Pattern.compile(".*\\[(.*)\\].*");	
+
 		try {
 			for(Pair<String, String> pair: files) {
 				dotFile = pair.getValue0();
@@ -92,10 +102,10 @@ public class CallGraphPatcher {
 
 				BufferedReader is = new BufferedReader(new FileReader(entrypoints));
 				List<Pair<String, SootMethod>> javaToNative = new ArrayList<Pair<String, SootMethod>>();
-				Map<String, List<SootMethod>> nativeToJava = new HashMap<String, List<SootMethod>>();
+				Map<String, List<Pair<SootMethod,List<String>>>> nativeToJava = new HashMap<String, List<Pair<SootMethod,List<String>>>>();
 				Stmt stmt = null;
 				InvokeExpr ie = null;
-				List<SootMethod> javaTargets = null;
+				List<Pair<SootMethod,List<String>>> javaTargets = null;
 				for(String line = is.readLine(); line != null; line = is.readLine()) {
 					if(line.startsWith(Constants.HEADER_ENTRYPOINTS_FILE)) {
 						continue;
@@ -119,7 +129,7 @@ public class CallGraphPatcher {
 									if(stmt.containsInvokeExpr()) {
 										ie = stmt.getInvokeExpr();
 										if(ie.getMethod().equals(nativeMethod)) {
-											javaToNative.add(new Pair<String, SootMethod>(target, nativeMethod));
+											javaToNative.add(new Pair<>(target, nativeMethod));
 										}
 									}
 								}
@@ -128,10 +138,17 @@ public class CallGraphPatcher {
 					}
 
 					// HANDLE NATIVE TO JAVA CALLS
-					if(split.length == 9) {
+					if(split.length > 9) {
 						String invokeeClass = split[5].trim();
 						String invokeeMethod = split[6].trim();
 						String invokeeSig = split[7].trim();
+						Matcher matcher = list_pattern.matcher(line);
+						List<String> argument_expressions = new ArrayList<>();;
+						if(matcher.find()) {
+							String match = matcher.group(1);
+							if(!match.equals(""))
+								argument_expressions = Arrays.asList(match.split(","));
+						}
 						pairNewSig = Utils.compactSigtoJimpleSig(invokeeSig);
 						newSig = Utils.toJimpleSignature(invokeeClass, pairNewSig.getValue1(), invokeeMethod, pairNewSig.getValue0());
 						if(!Scene.v().containsMethod(newSig)) {
@@ -140,10 +157,10 @@ public class CallGraphPatcher {
 						sm = Scene.v().getMethod(newSig);
 						javaTargets = nativeToJava.get(target);
 						if(javaTargets == null) {
-							javaTargets = new ArrayList<SootMethod>();
+							javaTargets = new ArrayList<>();
 							nativeToJava.put(target, javaTargets);
 						}
-						javaTargets.add(sm);
+						javaTargets.add(new Pair<>(sm, argument_expressions));
 					}
 				}
 				is.close();
@@ -220,44 +237,79 @@ public class CallGraphPatcher {
 						Unit lastAdded = null,
 								insertPoint = null;
 						if(javaTargets != null && !javaTargets.isEmpty()) {
-							for(SootMethod met: javaTargets) {
+							List<Value> return_values = new ArrayList<>(); // List of values returned by the added invocations
+							for(Pair<SootMethod, List<String>> invoke_info: javaTargets) {
+								SootMethod met = invoke_info.getValue0();
+								List<String> argument_expressions = invoke_info.getValue1();
 								Type ret = met.getReturnType();
 								Body b = sm.retrieveActiveBody();
+								Stmt newStmt = null;
 								Local local = null;
 								LocalGenerator lg = new LocalGenerator(b);
 								local = DummyBinaryClass.v().getOrGenerateLocal(b, this.getfirstAfterIdenditiesUnits(b), met.getDeclaringClass().getType());
 
-								int paramLength = met.getParameterCount();
-								List<Value> potentialParameters = new ArrayList<Value>();
-
-								boolean found;
-								for(Type t: met.getParameterTypes()) {
-									found = false;
-									for(Local l: b.getLocals()) {
-										if(l.getType().equals(t)) {
-											if(!potentialParameters.contains(l)) {
-												potentialParameters.add(l);
-												found = true;
-											}
-										}
-									}
-									if(!found) {
-										potentialParameters.add(DummyBinaryClass.v().generateLocalAndNewStmt(b, this.getfirstAfterIdenditiesUnits(b), t));
-									}
-								}
-
-								boolean isGoodCombi = true;
-								Permutator<Value> permutator = new Permutator<Value>(potentialParameters, paramLength);
-								for (List<Value> parameters : permutator) {
-									isGoodCombi = true;
-									for(int i = 0 ; i < paramLength ; i++) {
-										if(!parameters.get(i).getType().equals(met.getParameterTypes().get(i))) {
-											isGoodCombi = false;
+								// First try to use symbols to generate invokee arguments
+								boolean symbolic_generation_done = false;
+								if(argument_expressions.size() > 0) {
+									boolean parsing_ok = true;
+									// Construct parameters using symbols
+									List<Value> parameters = new ArrayList<Value>();
+									int arg_number = 0;
+									Pattern pattern = Pattern.compile("<BV32 ([a-zA-Z0-9_#]+)>");
+									for(String arg_angr_str : argument_expressions) {	
+										Type arg_type = met.getParameterType(arg_number);
+										
+										// TODO: Only simple symbols (BV32) are currently parsed
+										// Full angr expression should be parsed
+								        Matcher matcher = pattern.matcher(arg_angr_str);
+										if(!matcher.find()) {
+											parsing_ok = false;
 											break;
 										}
+										String symbol_name = matcher.group(1);			
+										Value corresponding_jimple_value = null;
+										if(symbol_name.startsWith("param")) {
+											int parameter_number = Integer.parseInt(symbol_name.split("_")[1].substring(1));
+											corresponding_jimple_value = sm.getActiveBody().getParameterLocal(parameter_number);
+										}
+										else if(symbol_name.startsWith("return")) {
+											int return_number = Integer.parseInt(symbol_name.split("_")[1].substring(1)) - 1;
+											System.out.println(symbol_name);
+											System.out.println(return_number);
+											System.out.println(return_values);
+											if(return_values.size() > return_number) {
+												corresponding_jimple_value = return_values.get(return_number);												
+											} else {
+												parsing_ok = false;
+												break;												
+											}
+										}
+										else if(symbol_name.startsWith("0x")) {
+											int immediate_number = Integer.parseInt(symbol_name.substring(2), 16);
+											if(arg_type instanceof IntType) {
+												corresponding_jimple_value = IntConstant.v(immediate_number);
+											} else if (arg_type instanceof LongType) {
+												corresponding_jimple_value = LongConstant.v(immediate_number);
+											} else {
+												parsing_ok = false;
+												break;	
+											}
+										} else {
+											parsing_ok = false;
+											break;											
+										}										
+										
+										if(corresponding_jimple_value != null) {
+											parameters.add(corresponding_jimple_value);
+										} else {
+											parsing_ok = false;
+											break;											
+										}
+										arg_number++;
 									}
-									// OK NOW ADD OPAQUE PREDICATE
-									if(isGoodCombi) {
+									
+									if(parsing_ok) {
+										// Create corresponding invoke statement
 										if(met.isConstructor()) {
 											ie = Jimple.v().newSpecialInvokeExpr(local, met.makeRef(), parameters);
 										}else if(met.isStatic()) {
@@ -265,13 +317,17 @@ public class CallGraphPatcher {
 										}else {
 											ie = Jimple.v().newVirtualInvokeExpr(local, met.makeRef(), parameters);
 										}
-										Stmt newStmt = null;
+									
+										// Stores return value if any
 										if(ret.equals(VoidType.v())) {
 											newStmt = Jimple.v().newInvokeStmt(ie);
 										}else {
 											local = lg.generateLocal(met.getReturnType());
 											newStmt = Jimple.v().newAssignStmt(local, ie);
+											return_values.add(local);
 										}
+									
+										// Add statements to the method body
 										if(newStmt != null) {
 											if(lastAdded == null) {
 												insertPoint = this.getfirstAfterIdenditiesUnitsAfterInit(b);
@@ -281,31 +337,94 @@ public class CallGraphPatcher {
 												b.getUnits().insertAfter(newStmt, insertPoint);
 											}
 											lastAdded = newStmt;
-											if(permutator.size() > 1) {
-												DummyBinaryClass.v().addOpaquePredicate(b, b.getUnits().getSuccOf(newStmt), newStmt);
+										}
+									
+										symbolic_generation_done = true;
+									}
+								}
+								
+								// If symbol usage failed, go to fallback mode (permutations and opaque predicate)
+								if(!symbolic_generation_done){
+									int paramLength = met.getParameterCount();
+									List<Value> potentialParameters = new ArrayList<Value>();
+
+									boolean found;
+									for(Type t: met.getParameterTypes()) {
+										found = false;
+										for(Local l: b.getLocals()) {
+											if(l.getType().equals(t)) {
+												if(!potentialParameters.contains(l)) {
+													potentialParameters.add(l);
+													found = true;
+												}
 											}
 										}
-										Edge e = new Edge(sm, newStmt, met);
-										this.cg.addEdge(e);
-										this.newReachableNodes.add(met);
-										ResultsAccumulator.v().incrementNumberNewNativeToJavaCallGraphEdges();
-										if(!raw) {
-											CustomPrints.pinfo(String.format("Adding native-to-java Edge from %s to %s", sm, met));
+										if(!found) {
+											potentialParameters.add(DummyBinaryClass.v().generateLocalAndNewStmt(b, this.getfirstAfterIdenditiesUnits(b), t));
+										}
+									}
+
+									boolean isGoodCombi = true;
+									Permutator<Value> permutator = new Permutator<Value>(potentialParameters, paramLength);
+									for (List<Value> parameters : permutator) {
+										isGoodCombi = true;
+										for(int i = 0 ; i < paramLength ; i++) {
+											if(!parameters.get(i).getType().equals(met.getParameterTypes().get(i))) {
+												isGoodCombi = false;
+												break;
+											}
+										}
+										// OK NOW ADD OPAQUE PREDICATE
+										if(isGoodCombi) {
+											if(met.isConstructor()) {
+												ie = Jimple.v().newSpecialInvokeExpr(local, met.makeRef(), parameters);
+											}else if(met.isStatic()) {
+												ie = Jimple.v().newStaticInvokeExpr(met.makeRef(), parameters);
+											}else {
+												ie = Jimple.v().newVirtualInvokeExpr(local, met.makeRef(), parameters);
+											}
+											if(ret.equals(VoidType.v())) {
+												newStmt = Jimple.v().newInvokeStmt(ie);
+											}else {
+												local = lg.generateLocal(met.getReturnType());
+												newStmt = Jimple.v().newAssignStmt(local, ie);
+												return_values.add(local);
+											}
+											if(newStmt != null) {
+												if(lastAdded == null) {
+													insertPoint = this.getfirstAfterIdenditiesUnitsAfterInit(b);
+													b.getUnits().insertBefore(newStmt, insertPoint);
+												}else {
+													insertPoint = lastAdded;
+													b.getUnits().insertAfter(newStmt, insertPoint);
+												}
+												lastAdded = newStmt;
+												if(permutator.size() > 1) {
+													DummyBinaryClass.v().addOpaquePredicate(b, b.getUnits().getSuccOf(newStmt), newStmt);
+												}
+											}
 										}
 									}
 								}
 
+								Edge e = new Edge(sm, newStmt, met);
+								this.cg.addEdge(e);
+								this.newReachableNodes.add(met);
+								ResultsAccumulator.v().incrementNumberNewNativeToJavaCallGraphEdges();
+								if(!raw) {
+									CustomPrints.pinfo(String.format("Adding native-to-java Edge from %s to %s", sm, met));
+								}
+									
 								if(!sm.getReturnType().equals(VoidType.v())) {
 									// FIX MULTIPLE RETURN OF SAME TYPE (OPAQUE PREDICATE)
 									final Local retLoc = local;
 									DummyBinaryClass.v().addOpaquePredicateForReturn(b, b.getUnits().getLast(), Jimple.v().newReturnStmt(retLoc));
 								}
 								
-								
 								b.validate();
 							}
 						}
-					}
+					}						
 				}
 
 				// GENERATE BINARY NODES INTO SOOT CALL GRAPH

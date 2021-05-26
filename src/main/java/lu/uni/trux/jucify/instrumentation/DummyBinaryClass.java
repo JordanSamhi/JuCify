@@ -8,10 +8,12 @@ import org.javatuples.Pair;
 
 import lu.uni.trux.jucify.utils.Constants;
 import lu.uni.trux.jucify.utils.Utils;
+import polyglot.types.reflect.Constant;
 import soot.Body;
 import soot.IntType;
 import soot.Local;
 import soot.PatchingChain;
+import soot.PrimType;
 import soot.RefType;
 import soot.Scene;
 import soot.SootClass;
@@ -166,15 +168,17 @@ public class DummyBinaryClass {
 	public Local generateLocalAndNewStmt(Body b, Unit unit, Type t) {
 		LocalGenerator lg = new LocalGenerator(b);
 		Local l = lg.generateLocal(t);
-		List<Unit> unitsToAdd = new ArrayList<Unit>();
-		unitsToAdd.add(Jimple.v().newAssignStmt(l, Jimple.v().newNewExpr((RefType) t)));
-		if(!Scene.v().containsMethod(String.format("<%s: %s %s()>", t, Constants.VOID, Constants.INIT))) {
-			Utils.addPhantomMethod(t.toString(), Constants.INIT, Constants.VOID, new ArrayList<String>());
+		if(!(t instanceof PrimType)) {
+			List<Unit> unitsToAdd = new ArrayList<Unit>();
+			unitsToAdd.add(Jimple.v().newAssignStmt(l, Jimple.v().newNewExpr((RefType) t)));
+			if(!Scene.v().containsMethod(String.format("<%s: %s %s()>", t, Constants.VOID, Constants.INIT))) {
+				Utils.addPhantomMethod(t.toString(), Constants.INIT, Constants.VOID, new ArrayList<String>());
+			}
+			unitsToAdd.add(Jimple.v().newInvokeStmt(
+					Jimple.v().newSpecialInvokeExpr(l,
+							Utils.getMethodRef(t.toString(), Constants.INIT_METHOD_SUBSIG))));
+			b.getUnits().insertBefore(unitsToAdd, unit);
 		}
-		unitsToAdd.add(Jimple.v().newInvokeStmt(
-				Jimple.v().newSpecialInvokeExpr(l,
-						Utils.getMethodRef(t.toString(), Constants.INIT_METHOD_SUBSIG))));
-		b.getUnits().insertBefore(unitsToAdd, unit);
 		return l;
 	}
 
