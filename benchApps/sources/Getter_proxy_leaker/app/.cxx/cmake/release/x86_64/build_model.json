@@ -1,0 +1,70 @@
+{
+  "variant": {
+    "module": {
+      "rootBuildGradleFolder": "/Users/jordan.samhi/AndroidStudioProjects/Getter_proxy_leaker",
+      "sdkFolder": "/Users/jordan.samhi/Library/Android/sdk",
+      "isNativeCompilerSettingsCacheEnabled": false,
+      "isBuildOnlyTargetAbiEnabled": true,
+      "splitsAbiFilterSet": [],
+      "intermediatesFolder": "/Users/jordan.samhi/AndroidStudioProjects/Getter_proxy_leaker/app/build/intermediates",
+      "gradleModulePathName": ":app",
+      "moduleRootFolder": "/Users/jordan.samhi/AndroidStudioProjects/Getter_proxy_leaker/app",
+      "makeFile": "/Users/jordan.samhi/AndroidStudioProjects/Getter_proxy_leaker/app/CMakeLists.txt",
+      "buildSystem": "CMAKE",
+      "compilerSettingsCacheFolder": "/Users/jordan.samhi/AndroidStudioProjects/Getter_proxy_leaker/.cxx",
+      "cxxFolder": "/Users/jordan.samhi/AndroidStudioProjects/Getter_proxy_leaker/app/.cxx",
+      "ndkFolder": "/Users/jordan.samhi/Library/Android/sdk/ndk/21.1.6352462",
+      "ndkVersion": "21.1.6352462",
+      "ndkSupportedAbiList": [
+        "ARMEABI_V7A",
+        "ARM64_V8A",
+        "X86",
+        "X86_64"
+      ],
+      "ndkDefaultAbiList": [
+        "ARMEABI_V7A",
+        "ARM64_V8A",
+        "X86",
+        "X86_64"
+      ],
+      "cmakeToolchainFile": "."
+    },
+    "buildSystemArgumentList": [],
+    "cFlagList": [],
+    "cppFlagsList": [],
+    "variantName": "release",
+    "soFolder": "/Users/jordan.samhi/AndroidStudioProjects/Getter_proxy_leaker/app/build/intermediates/cmake/release/lib",
+    "objFolder": "/Users/jordan.samhi/AndroidStudioProjects/Getter_proxy_leaker/app/build/intermediates/cmake/release/obj",
+    "jsonFolder": "/Users/jordan.samhi/AndroidStudioProjects/Getter_proxy_leaker/app/.cxx/cmake/release",
+    "gradleBuildOutputFolder": "/Users/jordan.samhi/AndroidStudioProjects/Getter_proxy_leaker/app/.cxx/cxx/release",
+    "isDebuggableEnabled": false,
+    "validAbiList": [
+      "ARMEABI_V7A",
+      "ARM64_V8A",
+      "X86",
+      "X86_64"
+    ],
+    "buildTargetSet": []
+  },
+  "abi": "X86_64",
+  "abiPlatformVersion": 18,
+  "cxxBuildFolder": "/Users/jordan.samhi/AndroidStudioProjects/Getter_proxy_leaker/app/.cxx/cmake/release/x86_64",
+  "jsonFile": "/Users/jordan.samhi/AndroidStudioProjects/Getter_proxy_leaker/app/.cxx/cmake/release/x86_64/android_gradle_build.json",
+  "gradleBuildOutputFolder": "/Users/jordan.samhi/AndroidStudioProjects/Getter_proxy_leaker/app/.cxx/cxx/release/x86_64",
+  "objFolder": "/Users/jordan.samhi/AndroidStudioProjects/Getter_proxy_leaker/app/build/intermediates/cmake/release/obj/x86_64",
+  "buildCommandFile": "/Users/jordan.samhi/AndroidStudioProjects/Getter_proxy_leaker/app/.cxx/cmake/release/x86_64/build_command.txt",
+  "buildOutputFile": "/Users/jordan.samhi/AndroidStudioProjects/Getter_proxy_leaker/app/.cxx/cmake/release/x86_64/build_output.txt",
+  "modelOutputFile": "/Users/jordan.samhi/AndroidStudioProjects/Getter_proxy_leaker/app/.cxx/cmake/release/x86_64/build_model.json",
+  "cmake": {
+    "cmakeListsWrapperFile": "/Users/jordan.samhi/AndroidStudioProjects/Getter_proxy_leaker/app/.cxx/cxx/release/x86_64/CMakeLists.txt",
+    "toolchainWrapperFile": "/Users/jordan.samhi/AndroidStudioProjects/Getter_proxy_leaker/app/.cxx/cxx/release/x86_64/android_gradle_build.toolchain.cmake",
+    "buildGenerationStateFile": "/Users/jordan.samhi/AndroidStudioProjects/Getter_proxy_leaker/app/.cxx/cxx/release/x86_64/build_generation_state.json",
+    "cacheKeyFile": "/Users/jordan.samhi/AndroidStudioProjects/Getter_proxy_leaker/app/.cxx/cxx/release/x86_64/compiler_cache_key.json",
+    "compilerCacheUseFile": "/Users/jordan.samhi/AndroidStudioProjects/Getter_proxy_leaker/app/.cxx/cxx/release/x86_64/compiler_cache_use.json",
+    "compilerCacheWriteFile": "/Users/jordan.samhi/AndroidStudioProjects/Getter_proxy_leaker/app/.cxx/cxx/release/x86_64/compiler_cache_write.json",
+    "toolchainSettingsFromCacheFile": "/Users/jordan.samhi/AndroidStudioProjects/Getter_proxy_leaker/app/.cxx/cxx/release/x86_64/compiler_settings_cache.cmake",
+    "cmakeWrappingBaseFolder": "."
+  },
+  "jsonGenerationLoggingRecordFile": "/Users/jordan.samhi/AndroidStudioProjects/Getter_proxy_leaker/app/.cxx/cmake/release/x86_64/json_generation_record.json",
+  "compileCommandsJsonFile": "/Users/jordan.samhi/AndroidStudioProjects/Getter_proxy_leaker/app/.cxx/cmake/release/x86_64/compile_commands.json"
+}

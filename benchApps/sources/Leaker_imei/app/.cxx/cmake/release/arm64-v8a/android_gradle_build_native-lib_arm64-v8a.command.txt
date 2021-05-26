@@ -1,0 +1,8 @@
+Executable : /Users/jordan.samhi/Library/Android/sdk/cmake/3.6.4111459/bin/cmake
+arguments : 
+--build
+/Users/jordan.samhi/AndroidStudioProjects/Leaker_imei/app/.cxx/cmake/release/arm64-v8a
+--target
+native-lib
+jvmArgs : 
+
