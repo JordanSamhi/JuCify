@@ -1,0 +1,3 @@
+/Users/jordan.samhi/AndroidStudioProjects/Getter_proxy_leaker/app/.cxx/cmake/release/armeabi-v7a/CMakeFiles/edit_cache.dir
+/Users/jordan.samhi/AndroidStudioProjects/Getter_proxy_leaker/app/.cxx/cmake/release/armeabi-v7a/CMakeFiles/rebuild_cache.dir
+/Users/jordan.samhi/AndroidStudioProjects/Getter_proxy_leaker/app/.cxx/cmake/release/armeabi-v7a/CMakeFiles/native-lib.dir

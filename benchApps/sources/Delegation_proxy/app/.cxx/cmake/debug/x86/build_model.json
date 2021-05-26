@@ -1,0 +1,69 @@
+{
+  "variant": {
+    "module": {
+      "rootBuildGradleFolder": "/Users/jordan.samhi/AndroidStudioProjects/Delegation_proxy",
+      "sdkFolder": "/Users/jordan.samhi/Library/Android/sdk",
+      "isNativeCompilerSettingsCacheEnabled": false,
+      "isBuildOnlyTargetAbiEnabled": true,
+      "ideBuildTargetAbi": "x86,armeabi-v7a,armeabi",
+      "splitsAbiFilterSet": [],
+      "intermediatesFolder": "/Users/jordan.samhi/AndroidStudioProjects/Delegation_proxy/app/build/intermediates",
+      "gradleModulePathName": ":app",
+      "moduleRootFolder": "/Users/jordan.samhi/AndroidStudioProjects/Delegation_proxy/app",
+      "makeFile": "/Users/jordan.samhi/AndroidStudioProjects/Delegation_proxy/app/CMakeLists.txt",
+      "buildSystem": "CMAKE",
+      "compilerSettingsCacheFolder": "/Users/jordan.samhi/AndroidStudioProjects/Delegation_proxy/.cxx",
+      "cxxFolder": "/Users/jordan.samhi/AndroidStudioProjects/Delegation_proxy/app/.cxx",
+      "ndkFolder": "/Users/jordan.samhi/Library/Android/sdk/ndk/21.1.6352462",
+      "ndkVersion": "21.1.6352462",
+      "ndkSupportedAbiList": [
+        "ARMEABI_V7A",
+        "ARM64_V8A",
+        "X86",
+        "X86_64"
+      ],
+      "ndkDefaultAbiList": [
+        "ARMEABI_V7A",
+        "ARM64_V8A",
+        "X86",
+        "X86_64"
+      ],
+      "cmakeToolchainFile": "."
+    },
+    "buildSystemArgumentList": [],
+    "cFlagList": [],
+    "cppFlagsList": [],
+    "variantName": "debug",
+    "soFolder": "/Users/jordan.samhi/AndroidStudioProjects/Delegation_proxy/app/build/intermediates/cmake/debug/lib",
+    "objFolder": "/Users/jordan.samhi/AndroidStudioProjects/Delegation_proxy/app/build/intermediates/cmake/debug/obj",
+    "jsonFolder": "/Users/jordan.samhi/AndroidStudioProjects/Delegation_proxy/app/.cxx/cmake/debug",
+    "gradleBuildOutputFolder": "/Users/jordan.samhi/AndroidStudioProjects/Delegation_proxy/app/.cxx/cxx/debug",
+    "isDebuggableEnabled": true,
+    "validAbiList": [
+      "X86",
+      "ARMEABI_V7A"
+    ],
+    "buildTargetSet": []
+  },
+  "abi": "X86",
+  "abiPlatformVersion": 18,
+  "cxxBuildFolder": "/Users/jordan.samhi/AndroidStudioProjects/Delegation_proxy/app/.cxx/cmake/debug/x86",
+  "jsonFile": "/Users/jordan.samhi/AndroidStudioProjects/Delegation_proxy/app/.cxx/cmake/debug/x86/android_gradle_build.json",
+  "gradleBuildOutputFolder": "/Users/jordan.samhi/AndroidStudioProjects/Delegation_proxy/app/.cxx/cxx/debug/x86",
+  "objFolder": "/Users/jordan.samhi/AndroidStudioProjects/Delegation_proxy/app/build/intermediates/cmake/debug/obj/x86",
+  "buildCommandFile": "/Users/jordan.samhi/AndroidStudioProjects/Delegation_proxy/app/.cxx/cmake/debug/x86/build_command.txt",
+  "buildOutputFile": "/Users/jordan.samhi/AndroidStudioProjects/Delegation_proxy/app/.cxx/cmake/debug/x86/build_output.txt",
+  "modelOutputFile": "/Users/jordan.samhi/AndroidStudioProjects/Delegation_proxy/app/.cxx/cmake/debug/x86/build_model.json",
+  "cmake": {
+    "cmakeListsWrapperFile": "/Users/jordan.samhi/AndroidStudioProjects/Delegation_proxy/app/.cxx/cxx/debug/x86/CMakeLists.txt",
+    "toolchainWrapperFile": "/Users/jordan.samhi/AndroidStudioProjects/Delegation_proxy/app/.cxx/cxx/debug/x86/android_gradle_build.toolchain.cmake",
+    "buildGenerationStateFile": "/Users/jordan.samhi/AndroidStudioProjects/Delegation_proxy/app/.cxx/cxx/debug/x86/build_generation_state.json",
+    "cacheKeyFile": "/Users/jordan.samhi/AndroidStudioProjects/Delegation_proxy/app/.cxx/cxx/debug/x86/compiler_cache_key.json",
+    "compilerCacheUseFile": "/Users/jordan.samhi/AndroidStudioProjects/Delegation_proxy/app/.cxx/cxx/debug/x86/compiler_cache_use.json",
+    "compilerCacheWriteFile": "/Users/jordan.samhi/AndroidStudioProjects/Delegation_proxy/app/.cxx/cxx/debug/x86/compiler_cache_write.json",
+    "toolchainSettingsFromCacheFile": "/Users/jordan.samhi/AndroidStudioProjects/Delegation_proxy/app/.cxx/cxx/debug/x86/compiler_settings_cache.cmake",
+    "cmakeWrappingBaseFolder": "."
+  },
+  "jsonGenerationLoggingRecordFile": "/Users/jordan.samhi/AndroidStudioProjects/Delegation_proxy/app/.cxx/cmake/debug/x86/json_generation_record.json",
+  "compileCommandsJsonFile": "/Users/jordan.samhi/AndroidStudioProjects/Delegation_proxy/app/.cxx/cmake/debug/x86/compile_commands.json"
+}
