@@ -4,4 +4,5 @@ target
 tests
 *.DS_Store
 apps/
-*__pycache__
+*__pycache__*
+*pyc
