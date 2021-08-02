@@ -22,7 +22,7 @@ then
 fi
 
 DST=$(dirname $FILE)/
-python3 main.py $FILE --out $DST
+python3 main.py $FILE --out $DST --cg
 check_return $? "Something went wrong with nativedisclosurer" ""
 
 LOC=$DST/$(basename $FILE .apk)"_result"

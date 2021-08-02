@@ -49,43 +49,16 @@ fi
 ./execute_with_limit_time.sh ./launch_native_disclosurer.sh -f $APK_PATH
 wait
 
-if [ "$RAW" = false ]
-then
-    print_info "Generating Binary Callgraph per Library..."
-fi
-if [ "$RAW" = false ]
-then
-    ./execute_with_limit_time.sh ./launch_retdec.sh -f $APK_PATH -d $ENTRYPOINTS_DIR
-    wait
-else
-    ./execute_with_limit_time.sh ./launch_retdec.sh -f $APK_PATH -d $ENTRYPOINTS_DIR -r
-    wait
-fi
+DST=$APK_DIRNAME"/"$APK_BASENAME
+mkdir -p $DST
+unzip -o $APK_PATH -d $DST > /dev/null 2>&1
 
+DOTFILE=$(ls -1 $ENTRYPOINTS_DIR|grep dot)
+DOTFILE_BNAME=$(basename $DOTFILE .dot)
+ENTRYPOINTFILE=$(ls -1 $ENTRYPOINTS_DIR|grep entrypoints)
+python3 process_binary_callgraph.py -d $ENTRYPOINTS_DIR/$DOTFILE -e $ENTRYPOINTS_DIR/$ENTRYPOINTFILE -w $APK_DIRNAME/$APK_BASENAME/$DOTFILE_BNAME.callgraph -m $ENTRYPOINTS_DIR/$DOTFILE_BNAME".map"
+CALLGRAPHS_PATHS+=$APK_DIRNAME/$APK_BASENAME/$DOTFILE_BNAME.callgraph":"$(dirname $ENTRYPOINTS_DIR/$ENTRYPOINTFILE)/$(basename $ENTRYPOINTS_DIR/$ENTRYPOINTFILE .entrypoints)"|"
 
-CALLGRAPHS_PATHS_TO_ENTRYPOINTS=""
-
-if [ "$RAW" = false ]
-then
-    print_info "Extracting Relevant Callgraph parts..."
-fi
-if [ $(ls $ENTRYPOINTS_DIR/|grep ".entrypoints$" |wc -l) -gt 0 ]
-then
-    for efile in $(ls -1 $ENTRYPOINTS_DIR/*.entrypoints)
-    do
-        bname=$(basename $efile .result.entrypoints)
-        for f in $(find $APK_DIRNAME/$APK_BASENAME/lib/ -name "*.dot")
-        do
-            bnamef=$(basename $f)
-            if [[ $bnamef = $bname* ]]
-            then
-                python3 process_binary_callgraph.py -d $f -e $efile -w $APK_DIRNAME/$APK_BASENAME/$bname.callgraph
-                wait
-                CALLGRAPHS_PATHS+=$APK_DIRNAME/$APK_BASENAME/$bname.callgraph":"$(dirname $efile)/$(basename $efile .entrypoints)"|"
-            fi
-        done
-    done
-fi
 
 OPTS=""
 
@@ -110,4 +83,4 @@ then
 else
     print_info "Not executing JuCify"
 fi
-rm -rf $APK_DIRNAME/$APK_BASENAME $APK_DIRNAME/$APK_BASENAME".apk" $APK_DIRNAME/$APK_BASENAME"_result" $APK_DIRNAME/*.map
+rm -rf $APK_DIRNAME/$APK_BASENAME $APK_DIRNAME/$APK_BASENAME".apk" $ENTRYPOINTS_DIR $APK_DIRNAME/*.map
