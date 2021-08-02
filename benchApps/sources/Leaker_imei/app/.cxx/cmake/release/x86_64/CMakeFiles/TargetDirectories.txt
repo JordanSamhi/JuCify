@@ -1,3 +1,0 @@
-/Users/jordan.samhi/AndroidStudioProjects/Leaker_imei/app/.cxx/cmake/release/x86_64/CMakeFiles/edit_cache.dir
-/Users/jordan.samhi/AndroidStudioProjects/Leaker_imei/app/.cxx/cmake/release/x86_64/CMakeFiles/rebuild_cache.dir
-/Users/jordan.samhi/AndroidStudioProjects/Leaker_imei/app/.cxx/cmake/release/x86_64/CMakeFiles/native-lib.dir
