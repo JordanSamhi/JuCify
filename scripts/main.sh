@@ -40,8 +40,6 @@ then
     print_info "Processing $pkg_name"
 fi
 
-./map_symbols_with_addresses.sh $APK_PATH
-
 if [ "$RAW" = false ]
 then
     print_info "Extracting Java-to-Binary and Binary-to-Java function calls..."
@@ -83,4 +81,4 @@ then
 else
     print_info "Not executing JuCify"
 fi
-rm -rf $APK_DIRNAME/$APK_BASENAME $APK_DIRNAME/$APK_BASENAME".apk" $ENTRYPOINTS_DIR $APK_DIRNAME/*.map
+rm -rf $APK_DIRNAME/$APK_BASENAME $APK_DIRNAME/$APK_BASENAME".apk" $APK_DIRNAME/$ENTRYPOINTS_DIR
