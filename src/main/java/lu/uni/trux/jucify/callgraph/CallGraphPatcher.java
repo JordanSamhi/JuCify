@@ -126,9 +126,8 @@ public class CallGraphPatcher {
 							}
 						}
 					}
-
-					// HANDLE NATIVE TO JAVA CALLS
-					if(split.length == 9) {
+					// HANDLE NATIVE TO JAVA CALLS	
+					if(split.length == 10) {
 						String invokeeClass = split[5].trim();
 						String invokeeMethod = split[6].trim();
 						String invokeeSig = split[7].trim();
