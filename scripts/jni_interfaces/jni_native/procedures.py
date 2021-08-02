@@ -113,6 +113,7 @@ class GetStaticObjectField(GetObjectField):
 
 class CallMethodBase(JPB):
     def run(self, env, _, method_ptr):
+        logger.debug(f'{self.__class__.__name__} SimP at {hex(self.state.addr)} is invoked')
         method = self.get_ref(method_ptr)
         record = self.get_current_record()
         # record could be None when CallMethod function called in JNI_OnLoad
@@ -121,7 +122,8 @@ class CallMethodBase(JPB):
                 logger.warning(f'{self.__class__} received method pointer:' +\
                         f'{method_ptr} without corresponding method instance')
             else:
-                record.add_invokee(method)
+                cur_func = self.get_cur_func()
+                record.add_invokee(method, cur_func)
         return_value = self.get_return_value(method)
         if return_value:
             return return_value
@@ -129,6 +131,13 @@ class CallMethodBase(JPB):
     def get_current_record(self):
         func_ptr = self.state.globals.get('func_ptr')
         return Record.RECORDS.get(func_ptr)
+
+    def get_cur_func(self):
+        cur_func = None
+        func_stack = self.state.globals.get('func_stack')
+        if len(func_stack) > 0:
+            cur_func = func_stack[-1]
+        return cur_func
 
     def get_return_value(self, method):
         raise NotImplementedError('Extending CallMethodBase without implement get_return_value!')
@@ -138,11 +147,29 @@ class CallPrimaryMethod(CallMethodBase):
     def get_return_value(self, method):
         return self.state.solver.BVS('primary_value', self.arch.bits)
 
+
+class CallPrimaryMethodV(CallPrimaryMethod):
+    # According to Android's "jni.h" source code, invocation of "Call...Method"
+    # will always lead to the invocation of the corresponding "Call...MethodV"
+    # and normally programmers do not directly invoke "Call...MethodV".
+    # So to skip the wrapper invocation (i.e., invocation of "Call...Method")
+    # in order to simplify the Callgraph, we try to return the caller's caller
+    # from the "func_stack" in the method.
+    def get_cur_func(self):
+        cur_func = None
+        func_stack = self.state.globals.get('func_stack')
+        if len(func_stack) > 1:
+            cur_func = func_stack[-2]
+        elif len(func_stack) > 0:
+            cur_func = func_stack[-1]
+        return cur_func
+
+
 class CallBooleanMethod(CallPrimaryMethod):
     pass
 
 
-class CallBooleanMethodV(CallPrimaryMethod):
+class CallBooleanMethodV(CallPrimaryMethodV):
     pass
 
 
@@ -154,7 +181,7 @@ class CallByteMethod(CallPrimaryMethod):
     pass
 
 
-class CallByteMethodV(CallPrimaryMethod):
+class CallByteMethodV(CallPrimaryMethodV):
     pass
 
 
@@ -166,7 +193,7 @@ class CallCharMethod(CallPrimaryMethod):
     pass
 
 
-class CallCharMethodV(CallPrimaryMethod):
+class CallCharMethodV(CallPrimaryMethodV):
     pass
 
 
@@ -178,7 +205,7 @@ class CallShortMethod(CallPrimaryMethod):
     pass
 
 
-class CallShortMethodV(CallPrimaryMethod):
+class CallShortMethodV(CallPrimaryMethodV):
     pass
 
 
@@ -190,7 +217,7 @@ class CallIntMethod(CallPrimaryMethod):
     pass
 
 
-class CallIntMethodV(CallPrimaryMethod):
+class CallIntMethodV(CallPrimaryMethodV):
     pass
 
 
@@ -202,7 +229,7 @@ class CallLongMethod(CallPrimaryMethod):
     pass
 
 
-class CallLongMethodV(CallPrimaryMethod):
+class CallLongMethodV(CallPrimaryMethodV):
     pass
 
 
@@ -214,7 +241,7 @@ class CallFloatMethod(CallPrimaryMethod):
     pass
 
 
-class CallFloatMethodV(CallPrimaryMethod):
+class CallFloatMethodV(CallPrimaryMethodV):
     pass
 
 
@@ -226,7 +253,7 @@ class CallDoubleMethod(CallPrimaryMethod):
     pass
 
 
-class CallDoubleMethodV(CallPrimaryMethod):
+class CallDoubleMethodV(CallPrimaryMethodV):
     pass
 
 
@@ -238,7 +265,7 @@ class CallStaticBooleanMethod(CallPrimaryMethod):
     pass
 
 
-class CallStaticBooleanMethodV(CallPrimaryMethod):
+class CallStaticBooleanMethodV(CallPrimaryMethodV):
     pass
 
 
@@ -250,7 +277,7 @@ class CallStaticByteMethod(CallPrimaryMethod):
     pass
 
 
-class CallStaticByteMethodV(CallPrimaryMethod):
+class CallStaticByteMethodV(CallPrimaryMethodV):
     pass
 
 
@@ -262,7 +289,7 @@ class CallStaticCharMethod(CallPrimaryMethod):
     pass
 
 
-class CallStaticCharMethodV(CallPrimaryMethod):
+class CallStaticCharMethodV(CallPrimaryMethodV):
     pass
 
 
@@ -274,7 +301,7 @@ class CallStaticShortMethod(CallPrimaryMethod):
     pass
 
 
-class CallStaticShortMethodV(CallPrimaryMethod):
+class CallStaticShortMethodV(CallPrimaryMethodV):
     pass
 
 
@@ -286,7 +313,7 @@ class CallStaticIntMethod(CallPrimaryMethod):
     pass
 
 
-class CallStaticIntMethodV(CallPrimaryMethod):
+class CallStaticIntMethodV(CallPrimaryMethodV):
     pass
 
 
@@ -298,7 +325,7 @@ class CallStaticLongMethod(CallPrimaryMethod):
     pass
 
 
-class CallStaticLongMethodV(CallPrimaryMethod):
+class CallStaticLongMethodV(CallPrimaryMethodV):
     pass
 
 
@@ -310,7 +337,7 @@ class CallStaticFloatMethod(CallPrimaryMethod):
     pass
 
 
-class CallStaticFloatMethodV(CallPrimaryMethod):
+class CallStaticFloatMethodV(CallPrimaryMethodV):
     pass
 
 
@@ -322,7 +349,7 @@ class CallStaticDoubleMethod(CallPrimaryMethod):
     pass
 
 
-class CallStaticDoubleMethodV(CallPrimaryMethod):
+class CallStaticDoubleMethodV(CallPrimaryMethodV):
     pass
 
 
@@ -336,18 +363,31 @@ class CallVoidMethod(CallMethodBase):
 
 
 class CallVoidMethodV(CallVoidMethod):
-    pass
+    # According to Android's "jni.h" source code, invocation of "Call...Method"
+    # will always lead to the invocation of the corresponding "Call...MethodV"
+    # and normally programmers do not directly invoke "Call...MethodV".
+    # So to skip the wrapper invocation (i.e., invocation of "Call...Method")
+    # in order to simplify the Callgraph, we try to return the caller's caller
+    # from the "func_stack" in the method.
+    def get_cur_func(self):
+        cur_func = None
+        func_stack = self.state.globals.get('func_stack')
+        if len(func_stack) > 1:
+            cur_func = func_stack[-2]
+        elif len(func_stack) > 0:
+            cur_func = func_stack[-1]
+        return cur_func
 
 
 class CallVoidMethodA(CallVoidMethod):
     pass
 
 
-class CallStaticVoidMethod(CallMethodBase):
+class CallStaticVoidMethod(CallVoidMethod):
     pass
 
 
-class CallStaticVoidMethodV(CallVoidMethod):
+class CallStaticVoidMethodV(CallVoidMethodV):
     pass
 
 
@@ -365,7 +405,20 @@ class CallObjectMethod(CallMethodBase):
 
 
 class CallObjectMethodV(CallObjectMethod):
-    pass
+    # According to Android's "jni.h" source code, invocation of "Call...Method"
+    # will always lead to the invocation of the corresponding "Call...MethodV"
+    # and normally programmers do not directly invoke "Call...MethodV".
+    # So to skip the wrapper invocation (i.e., invocation of "Call...Method")
+    # in order to simplify the Callgraph, we try to return the caller's caller
+    # from the "func_stack" in the method.
+    def get_cur_func(self):
+        cur_func = None
+        func_stack = self.state.globals.get('func_stack')
+        if len(func_stack) > 1:
+            cur_func = func_stack[-2]
+        elif len(func_stack) > 0:
+            cur_func = func_stack[-1]
+        return cur_func
 
 
 class CallObjectMethodA(CallObjectMethod):
@@ -376,7 +429,7 @@ class CallStaticObjectMethod(CallObjectMethod):
     pass
 
 
-class CallStaticObjectMethodV(CallObjectMethod):
+class CallStaticObjectMethodV(CallObjectMethodV):
     pass
 
 

@@ -2,21 +2,27 @@ import os
 import sys
 import argparse
 import timeit
+import tempfile
 import multiprocessing as mp
 import multiprocessing.pool
 import threading
 import angr
 import cle
+import pydot
+import networkx as nx
 import logging
 from androguard.misc import AnalyzeAPK
 
+from import_implementations import hookAllImportSymbols
 from jni_interfaces.record import Record
 from jni_interfaces.utils import (record_static_jni_functions, clean_records,
         record_dynamic_jni_functions, print_records, analyze_jni_function,
         jni_env_prepare_in_object, JNI_LOADER)
 
+ANGR_RETDEC_OFFSET = 4194305
+
 # the longest time in seconds to analyze 1 JNI function.
-WAIT_TIME = 20
+WAIT_TIME = 180
 # the longest time in seconds for dynamic registration analysis
 DYNAMIC_ANALYSIS_TIME = 600
 
@@ -159,8 +165,8 @@ def get_native_apks():
 
 
 def cmd():
-    path_2_apk, out = parse_args()
-    apk_run(path_2_apk, out)
+    path_2_apk, out, output_cg = parse_args()
+    apk_run(path_2_apk, out, output_cg)
 
 
 def print_performance(perf, out):
@@ -174,6 +180,7 @@ def parse_args():
     parser = argparse.ArgumentParser(description=desc)
     parser.add_argument('apk', type=str, help='directory to the APK file')
     parser.add_argument('--out', type=str, default=None, help='the output directory')
+    parser.add_argument('--cg', help='Enable the output of binary callgraph as a dot file', action='store_true')
     args = parser.parse_args()
     if not os.path.exists(args.apk):
         print('APK file does not exist!', file=sys.stderr)
@@ -187,7 +194,7 @@ def parse_args():
     out = os.path.join(args.out, result_dir)
     if not os.path.exists(out):
         os.makedirs(out)
-    return args.apk, out
+    return args.apk, out, args.cg
 
 
 def sha_run(sha):
@@ -220,7 +227,98 @@ def select_abi_dir(dir_list):
     return selected
 
 
-def apk_run(path, out=None, comprise=False):
+def get_return_address(state):
+    # TODO: check architecture to decide from where to retrieve return address.
+    return_addr = None
+    # for ARM, get it from register, lr
+    if 'ARM' in state.arch.name:
+        return_addr = state.solver.eval(state.regs.lr)
+    else:
+        logger.warning(f'Retrieve return address of architecture {state.arch.name} has not been implemented!')
+    return return_addr
+
+
+def cg_addr_hook(state):
+    addr = state.addr
+    func_info = state.globals.get('func_info')
+    func_stack = state.globals.get('func_stack')
+    if len(func_stack) == 0:
+        # entering a tracking function
+        func = find_func(addr, func_info, 'enter')
+        if func is not None:
+            logger.debug(f'enter func: {func}')
+            func_stack.append(func)
+            info = func_info.get(func)
+            # appending and hooking func ending address for judging exiting of the func.
+            return_addr = get_return_address(state)
+            info.append(return_addr)
+            # as func_info is a dict proxy, the list object have always to be updated.
+            func_info.update({func: info})
+            state.project.hook(return_addr, hook=cg_addr_hook)
+    else:
+        # check if exiting current function
+        addrs = func_info.get(func_stack[-1])
+        if len(addrs) == 2 and addrs[1] == addr:
+            exit_func = func_stack.pop()
+            logger.debug(f'exit func: {exit_func}')
+        # check if enterring a new function
+        func = find_func(addr, func_info, 'enter')
+        if func is not None:
+            logger.debug(f'enter func: {func}')
+            func_stack.append(func)
+            info = func_info.get(func)
+            # appending and hooking func ending address for judging exiting of the func.
+            return_addr = get_return_address(state)
+            info.append(return_addr)
+            # as func_info is a dict proxy, the list object have always to be updated.
+            func_info.update({func: info})
+            state.project.hook(return_addr, hook=cg_addr_hook)
+
+
+def find_func(addr, f_info, addr_type):
+    types = ('enter', 'exit')
+    the_func = None
+    if not addr_type in types:
+        logger.warning(f'"find_func" does not support the "addr_type": {addr_type}!')
+        return the_func
+    for func, addrs in f_info.items():
+        if addr_type == types[0]:
+            func_addr = addrs[0]
+        else:
+            func_addr = addrs[1] if len(addrs) == 2 else None
+        if addr == func_addr:
+            the_func = func
+            break
+    return the_func
+
+
+
+def get_function_addresses(proj, output_cg=False, path=None):
+    funcs_addrs = list()
+    cfg = proj.analyses.CFGFast()
+    for addr in cfg.functions:
+        f = cfg.functions[addr]
+        if not f.is_simprocedure and not f.is_syscall and not f.is_plt and not proj.is_hooked(addr):
+            funcs_addrs.append((f.name, addr))
+    if output_cg:
+        file_name_cg = proj.filename.split('/')[-1] + '.dot'
+        file_name_map = proj.filename.split('/')[-1] + '.map'
+        path = '.' if path is None else path
+        if not os.path.exists(path):
+            os.makedirs(path)
+        cg_path = os.path.join(path, file_name_cg)
+        map_path = os.path.join(path, file_name_map)
+        # output the function name to address mapping. Since in CG, only addresses are provided.
+        with open(map_path, 'w') as f:
+            for func, addr in funcs_addrs:
+                print(f'{func}:{addr}', file=f)
+        # output the CG as a dot file. Can use the "dot" command of Graphviz access.
+        dot = nx.nx_pydot.to_pydot(cfg.functions.callgraph)
+        dot.write(cg_path)
+    return funcs_addrs
+
+
+def apk_run(path, out=None, output_cg=False, comprise=False):
     perf = Performance()
     if out is None:
         result_dir = path.split('/')[-1].rstrip('.apk') + '_result'
@@ -229,7 +327,7 @@ def apk_run(path, out=None, comprise=False):
             os.makedirs(out)
     perf.start()
     apk, _, dex = AnalyzeAPK(path)
-    with apk.zip as zf:
+    with apk.zip as zf, tempfile.TemporaryDirectory() as tmpd:
         chosen_abi_dir = select_abi_dir(zf.namelist())
         if chosen_abi_dir is None:
             logger.debug(f'No ABI directories were found for .so file in {path}')
@@ -238,7 +336,8 @@ def apk_run(path, out=None, comprise=False):
         for n in zf.namelist():
             if n.endswith('.so') and n.startswith(chosen_abi_dir):
                 logger.debug(f'Start to analyze {n}')
-                with zf.open(n) as so_file, mp.Manager() as mgr:
+                so_file = zf.extract(n, path=tmpd)
+                with mp.Manager() as mgr:
                     returns = mgr.dict()
                     proj, jvm, jenv, dynamic_timeout = find_all_jni_functions(so_file, dex)
                     if proj is None:
@@ -246,12 +345,23 @@ def apk_run(path, out=None, comprise=False):
                         continue
                     if dynamic_timeout:
                         perf.add_dynamic_reg_timeout()
+                    func_info = dict()
+                    funcs_addrs = get_function_addresses(proj, output_cg, out)
+                    for func, addr in funcs_addrs:
+                        proj.hook(addr, hook=cg_addr_hook)
+                        func_info.update({func:[addr]})
+                    global_refs = {
+                        'func_info': mgr.dict(func_info),
+                        'func_stack': mgr.list()
+                    }
                     perf.add_analyzed_so()
                     for jni_func, record in Record.RECORDS.items():
+                        # clear func stack before each analysis
+                        global_refs.get('func_stack')[:] = list()
                         # wrap the analysis with its own process to limit the
                         # analysis time.
                         p = mp.Process(target=analyze_jni_function,
-                                args=(*(jni_func, proj, jvm, jenv, dex, returns),))
+                                args=(*(jni_func, proj, jvm, jenv, dex, returns, global_refs),))
                         p.start()
                         perf.add_analyzed_func()
                         # For analysis of each .so file, we wait for 3mins at most.
@@ -268,7 +378,7 @@ def apk_run(path, out=None, comprise=False):
                     file_name = n.split('/')[-1] + '.result'
                     print_records(os.path.join(out, file_name))
     perf.end()
-    #print_performance(perf, out)
+    print_performance(perf, out)
     if comprise:
         from mylib.common import zipdir
         zipdir(result_dir, out, OUT_DIR, True)
@@ -283,11 +393,11 @@ def find_all_jni_functions(so_file, dex):
     # Mark whether the analysis for dynamic registration is timeout.
     dynamic_analysis_timeout = False
     try:
-        cle_loader = cle.loader.Loader(so_file, auto_load_libs=False)
+        proj = angr.Project(so_file, auto_load_libs=False)
     except Exception as e:
-        logger.warning(f'{so_file} cause CLE loader error: {e}')
+        logger.warning(f'{so_file} cause angr loading error: {e}')
     else:
-        proj = angr.Project(cle_loader)
+        hookAllImportSymbols(proj)
         jvm_ptr, jenv_ptr = jni_env_prepare_in_object(proj)
         clean_records()
         record_static_jni_functions(proj, dex)

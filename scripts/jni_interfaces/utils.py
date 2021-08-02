@@ -1,6 +1,7 @@
 import sys
 import re
 import logging
+import traceback
 from claripy import BVS
 from angr.sim_type import register_types, parse_type
 from angr.exploration_techniques import LengthLimiter
@@ -14,8 +15,8 @@ from .record import Record, RecordNotFoundError
 JNI_LOADER = 'JNI_OnLoad'
 # value for "LengthLimiter" to limit the length of path a state goes through.
 # refer to: https://docs.angr.io/core-concepts/pathgroups
-MAX_LENGTH = 500
-DYNAMIC_ANALYSIS_LENGTH = 1000
+MAX_LENGTH = 500000
+DYNAMIC_ANALYSIS_LENGTH = 100000
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
@@ -143,10 +144,13 @@ def get_prepared_jni_onload_state(proj, jvm_ptr, jenv_ptr, dex=None):
     return state
 
 
-def analyze_jni_function(func_addr, proj, jvm_ptr, jenv_ptr, dex=None, returns=None):
+def analyze_jni_function(func_addr, proj, jvm_ptr, jenv_ptr, dex=None, returns=None, global_refs=None):
     func_params, updates = get_jni_function_params(proj, func_addr, jenv_ptr)
     state = proj.factory.call_state(func_addr, *func_params)
     state.globals['func_ptr'] = func_addr
+    if global_refs is not None:
+        for k, v in global_refs.items():
+            state.globals[k] = v
     for k, v in updates.items():
         state.globals[k] = v
     jni_env_prepare_in_state(state, jvm_ptr, jenv_ptr, dex)
@@ -157,6 +161,7 @@ def analyze_jni_function(func_addr, proj, jvm_ptr, jenv_ptr, dex=None, returns=N
         simgr.run()
     except Exception as e:
         logger.warning(f'Analysis JNI function failed: {e}')
+        traceback.print_exc()
     # for multiprocess running. param "returns" should be a
     # multiprocessing.Manager().dict()
     if returns is not None:
@@ -283,7 +288,7 @@ def print_records(fname=None):
     header = 'invoker_cls, invoker_method, invoker_signature, invoker_symbol, ' +\
              'invoker_static_export, ' +\
              'invokee_cls, invokee_method, invokee_signature, invokee_static, ' +\
-             'invokee_desc'
+             'exit_addr, invokee_desc'
     if len(Record.RECORDS) > 0:
         f = None
         if fname is None:

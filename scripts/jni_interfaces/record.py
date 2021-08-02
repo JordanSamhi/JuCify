@@ -20,9 +20,10 @@ class Invokee:
         self.method_name = method.name
         self.signature = sig_refine(method.signature)
         self._static = method.static
+        self.exit = None
 
     def __str__(self):
-        s = f'{self.cls_name}, {self.method_name}, {self.signature}, {self._static}'
+        s = f'{self.cls_name}, {self.method_name}, {self.signature}, {self._static}, {self.exit},'
         if self.desc:
             s += f', {self.desc}'
         return s
@@ -45,7 +46,7 @@ class Record:
         self._invokees = None # list of method invoked by current native method
         Record.RECORDS.update({func_ptr: self}) # add itself to global record
 
-    def add_invokee(self, param):
+    def add_invokee(self, param, exit=None):
         """Add the Java invokee method information
         The invokee is a Java method invoked by current native function.
 
@@ -53,12 +54,15 @@ class Record:
         *param: should be either an instance of class Invokee or 3 strings
                 describing invokee's class name, method name and the signature
                 of the method.
+        exit: the address of the binary CG node from where the invokee is invoked
         """
         invokee = None
         if isinstance(param, Invokee):
             invokee = param
         else:
             invokee = Invokee(param)
+        if exit is not None:
+            invokee.exit = exit
         if self._invokees is None:
             self._invokees = list()
         self._invokees.append(invokee)
