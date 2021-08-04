@@ -5,6 +5,7 @@
 RAW=false
 TAINT_ANALYSIS=false
 EXPORT_CG_DST=false
+CLEAN=false
 
 while getopts f:p:rct option
 do
@@ -13,8 +14,9 @@ do
         f) APK_PATH=${OPTARG};;
         p) PLATFORMS_PATH=${OPTARG};;
         r) RAW=true;;
-        c) EXPORT_CG_DST=true;;
+        e) EXPORT_CG_DST=true;;
         t) TAINT_ANALYSIS=true;;
+        c) CLEAN=true;;
     esac
 done
 
@@ -81,4 +83,8 @@ then
 else
     print_info "Not executing JuCify"
 fi
-rm -rf $APK_DIRNAME/$APK_BASENAME $APK_DIRNAME/$APK_BASENAME".apk" $APK_DIRNAME/$ENTRYPOINTS_DIR
+
+if [ "$CLEAN" = true ]
+then
+    rm -rf $APK_DIRNAME/$APK_BASENAME $APK_DIRNAME/$ENTRYPOINTS_DIR
+fi
