@@ -7,7 +7,7 @@ TAINT_ANALYSIS=false
 EXPORT_CG_DST=false
 CLEAN=false
 
-while getopts f:p:rct option
+while getopts f:p:rcte option
 do
     case "${option}"
         in
