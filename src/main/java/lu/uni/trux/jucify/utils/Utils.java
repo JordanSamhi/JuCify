@@ -17,6 +17,7 @@ import soot.FloatType;
 import soot.IntType;
 import soot.Local;
 import soot.LongType;
+import soot.MethodOrMethodContext;
 import soot.PatchingChain;
 import soot.RefType;
 import soot.Scene;
@@ -225,7 +226,7 @@ public class Utils {
 		sm.setPhantom(true);
 		sc.addMethod(sm);
 	}
-	
+
 	public static boolean wasMethodPreviouslyReachableInCallGraph(CallGraph cg, SootMethod sm) {
 		Iterator<Edge> it = cg.edgesInto(sm);
 		Edge next = null;
@@ -238,5 +239,29 @@ public class Utils {
 			}
 		}
 		return found;
+	}
+
+	public static int getNumberOfNodesInCG(CallGraph cg) {
+		Iterator<Edge> it = cg.iterator();
+		Edge next = null;
+		MethodOrMethodContext src = null,
+				tgt = null;
+		List<MethodOrMethodContext> methods = new ArrayList<MethodOrMethodContext>();
+		while(it.hasNext()) {
+			next = it.next();
+			src = next.getSrc();
+			tgt = next.getTgt();
+			if(!methods.contains(src)) {
+				methods.add(src);
+			}
+			if(!methods.contains(tgt)) {
+				methods.add(tgt);
+			}
+		}
+		return methods.size();
+	}
+
+	public static int getNumberOfEdgesInCG(CallGraph cg) {
+		return cg.size();
 	}
 }

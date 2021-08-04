@@ -40,6 +40,10 @@ public class ResultsAccumulator {
 	private int numberNewCallGraphReachableNodesNative;
 	private int numberNewCallGraphReachableNodes;
 	private int numberNewEdges;
+	private int numberNodesBeforeJucify;
+	private int numberNodesAfterJucify;
+	private int numberEdgesBeforeJucify;
+	private int numberEdgesAfterJucify;
 	private boolean hasFlowThroughNative;
 
 	private ResultsAccumulator () {
@@ -50,6 +54,10 @@ public class ResultsAccumulator {
 		this.setNumberNewJavaToNativeCallGraphEdges(0);
 		this.setNumberNewNativeToJavaCallGraphEdges(0);
 		this.setNumberNewCallGraphReachableNodes(0);
+		this.setNumberNodesAfterJucify(0);
+		this.setNumberNodesBeforeJucify(0);
+		this.setNumberEdgesAfterJucify(0);
+		this.setNumberEdgesBeforeJucify(0);
 		this.setHasFlowThroughNative(false);
 	}
 
@@ -73,12 +81,13 @@ public class ResultsAccumulator {
 	}
 
 	private String generateVector() {
-		return String.format("%s,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d", this.getAppName(), this.getAnalysisElapsedTime(),
+		return String.format("%s,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d", this.getAppName(), this.getAnalysisElapsedTime(),
 				this.getInstrumentationElapsedTime(), this.getTaintAnalysisElapsedTime(),
 				this.getNumberNewJavaToNativeCallGraphEdges(), this.getNumberNewNativeToJavaCallGraphEdges(),
 				this.getNumberNewCallGraphReachableNodes(), this.getNumberNewCallGraphReachableNodesJava(),
 				this.getNumberNewCallGraphReachableNodesNative(), this.getNumberNewEdges(),
-				this.hasFlowThroughNative ? 1 : 0);
+				this.hasFlowThroughNative ? 1 : 0, this.getNumberNodesBeforeJucify(), this.getNumberNodesAfterJucify(),
+						this.getNumberEdgesBeforeJucify(), this.getNumberEdgesAfterJucify());
 	}
 	
 	public void printResults() {
@@ -87,6 +96,10 @@ public class ResultsAccumulator {
 		System.out.println(String.format(" - Analysis elapsed time: %d", this.getAnalysisElapsedTime()));
 		System.out.println(String.format(" - Instrumentation elapsed time: %d", this.getInstrumentationElapsedTime()));
 		System.out.println(String.format(" - Taint Analysis elapsed time: %d", this.getTaintAnalysisElapsedTime()));
+		System.out.println(String.format(" - Number of nodes before Jucify: %d", this.getNumberNodesBeforeJucify()));
+		System.out.println(String.format(" - Number of nodes after Jucify: %d", this.getNumberNodesAfterJucify()));
+		System.out.println(String.format(" - Number of edges before Jucify: %d", this.getNumberEdgesBeforeJucify()));
+		System.out.println(String.format(" - Number of edges after Jucify: %d", this.getNumberEdgesAfterJucify()));
 		System.out.println(String.format(" - Number new Java-to-Native Call-Graph edges: %d", this.getNumberNewJavaToNativeCallGraphEdges()));
 		System.out.println(String.format(" - Number new Native-to-Java Call-Graph edges: %d", this.getNumberNewNativeToJavaCallGraphEdges()));
 		System.out.println(String.format(" - Number new Call-Graph reachable nodes: %d", this.getNumberNewCallGraphReachableNodes()));
@@ -182,5 +195,37 @@ public class ResultsAccumulator {
 
 	public void setNumberNewEdges(int numberNewEdges) {
 		this.numberNewEdges = numberNewEdges;
+	}
+
+	public int getNumberNodesBeforeJucify() {
+		return numberNodesBeforeJucify;
+	}
+
+	public void setNumberNodesBeforeJucify(int numberNodesBeforeJucify) {
+		this.numberNodesBeforeJucify = numberNodesBeforeJucify;
+	}
+
+	public int getNumberNodesAfterJucify() {
+		return numberNodesAfterJucify;
+	}
+
+	public void setNumberNodesAfterJucify(int numberNodesAfterJucify) {
+		this.numberNodesAfterJucify = numberNodesAfterJucify;
+	}
+
+	public int getNumberEdgesBeforeJucify() {
+		return numberEdgesBeforeJucify;
+	}
+
+	public void setNumberEdgesBeforeJucify(int numberEdgesBeforeJucify) {
+		this.numberEdgesBeforeJucify = numberEdgesBeforeJucify;
+	}
+
+	public int getNumberEdgesAfterJucify() {
+		return numberEdgesAfterJucify;
+	}
+
+	public void setNumberEdgesAfterJucify(int numberEdgesAfterJucify) {
+		this.numberEdgesAfterJucify = numberEdgesAfterJucify;
 	}
 }

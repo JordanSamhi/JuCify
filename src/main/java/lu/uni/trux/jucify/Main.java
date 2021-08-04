@@ -14,6 +14,7 @@ import lu.uni.trux.jucify.callgraph.CallGraphPatcher;
 import lu.uni.trux.jucify.utils.CommandLineOptions;
 import lu.uni.trux.jucify.utils.Constants;
 import lu.uni.trux.jucify.utils.CustomPrints;
+import lu.uni.trux.jucify.utils.Utils;
 import soot.Scene;
 import soot.SootMethod;
 import soot.jimple.infoflow.InfoflowConfiguration.CodeEliminationMode;
@@ -85,6 +86,10 @@ public class Main {
 
 		StopWatch instrumentationTime = new StopWatch("Instrumentation");
 		instrumentationTime.start("Instrumentation");
+		
+		ResultsAccumulator.v().setNumberEdgesBeforeJucify(Utils.getNumberOfEdgesInCG(cg));
+		ResultsAccumulator.v().setNumberNodesBeforeJucify(Utils.getNumberOfNodesInCG(cg));
+		
 		CallGraphPatcher cgp = new CallGraphPatcher(cg, options.hasRaw());
 		cgp.importBinaryCallGraph(files);
 		if(!options.hasRaw()) {
@@ -164,6 +169,8 @@ public class Main {
 		ResultsAccumulator.v().setNumberNewCallGraphReachableNodesNative(cgp.getNewReachableNodesNative().size());
 		ResultsAccumulator.v().setNumberNewCallGraphReachableNodesJava(cgp.getNewReachableNodesJava().size());
 		ResultsAccumulator.v().setNumberNewEdges(sizeCallGraphAfterPatch - sizeCallGraphBeforePatch);
+		ResultsAccumulator.v().setNumberEdgesAfterJucify(Utils.getNumberOfEdgesInCG(cg));
+		ResultsAccumulator.v().setNumberNodesAfterJucify(Utils.getNumberOfNodesInCG(cg));
 		if(options.hasRaw()) {
 			ResultsAccumulator.v().printVectorResults();
 		}else {
