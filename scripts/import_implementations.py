@@ -36,10 +36,13 @@ def hookAllImportSymbols(proj):
     # Set warning SimProcedure on unimplemented imports
     for symb in proj.loader.symbols :
         if symb.is_import and symb.type == SymbolType.TYPE_FUNCTION:
-            symb_addr = symb.resolvedby.rebased_addr
+            if symb.resolvedby:
+                symb_addr = symb.resolvedby.rebased_addr
+            else:
+                symb_addr = symb.rebased_addr
             if proj.is_hooked(symb_addr):
                 simProc = proj.hooked_by(symb_addr)
                 if not simProc.is_stub:
                     # This symbol is already implemented by a SimProcedure
                     continue
-            proj.hook_symbol(symb.name,  UnimplementedHook(symb.name), replace=True)
+            proj.hook_symbol(symb_addr,  UnimplementedHook(symb.name), replace=False)
