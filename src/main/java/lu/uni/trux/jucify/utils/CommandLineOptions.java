@@ -107,7 +107,7 @@ public class CommandLineOptions {
 				.desc(FILES.getValue2())
 				.hasArg(true)
 				.argName(FILES.getValue0())
-				.required(true)
+				.required(false)
 				.build();
 		
 		final Option raw = Option.builder(RAW.getValue1())
@@ -190,16 +190,18 @@ public class CommandLineOptions {
 	public List<Pair<String, String>> getFiles() {
 		String files = this.cmdLine.getOptionValue(FILES.getValue0());
 		List<Pair<String, String>> pairs = new ArrayList<Pair<String,String>>();
-		for(String pair: files.split("\\|")) {
-			if(! pair.isEmpty()) {
-				String[] split = pair.split(":");
-				if(split.length == 2) {
-					pairs.add(new Pair<String, String>(split[0], split[1]));
-				}else {
-					CustomPrints.perror(String.format("Files not valid: $s", pair));
-				}
-			}
-		}
+        if(files != null){
+            for(String pair: files.split("\\|")) {
+                if(! pair.isEmpty()) {
+                    String[] split = pair.split(":");
+                    if(split.length == 2) {
+                        pairs.add(new Pair<String, String>(split[0], split[1]));
+                    }else {
+                        CustomPrints.perror(String.format("Files not valid: $s", pair));
+                    }
+                }
+            }
+        }
 		return pairs;
 	}
 	

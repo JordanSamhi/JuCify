@@ -53,12 +53,17 @@ DST=$APK_DIRNAME"/"$APK_BASENAME
 mkdir -p $DST
 unzip -o $APK_PATH -d $DST > /dev/null 2>&1
 
-DOTFILE=$(ls -1 $ENTRYPOINTS_DIR|grep dot)
-DOTFILE_BNAME=$(basename $DOTFILE .dot)
-ENTRYPOINTFILE=$(ls -1 $ENTRYPOINTS_DIR|grep entrypoints)
-python3 process_binary_callgraph.py -d $ENTRYPOINTS_DIR/$DOTFILE -e $ENTRYPOINTS_DIR/$ENTRYPOINTFILE -w $APK_DIRNAME/$APK_BASENAME/$DOTFILE_BNAME.callgraph -m $ENTRYPOINTS_DIR/$DOTFILE_BNAME".map"
-CALLGRAPHS_PATHS+=$APK_DIRNAME/$APK_BASENAME/$DOTFILE_BNAME.callgraph":"$(dirname $ENTRYPOINTS_DIR/$ENTRYPOINTFILE)/$(basename $ENTRYPOINTS_DIR/$ENTRYPOINTFILE .entrypoints)"|"
-
+ENTRYPOINTFILES=$(ls -1 $ENTRYPOINTS_DIR|grep entrypoints)
+if [ ! -z "$ENTRYPOINTFILES" ]
+then
+    for $ENTRYPOINTFILE in $ENTRYPOINTFILES
+    do
+        DOTFILE=$(basename $ENTRYPOINTFILE .result.entrypoints)".dot"
+        DOTFILE_BNAME=$(basename $DOTFILE .dot)
+        python3 process_binary_callgraph.py -d $ENTRYPOINTS_DIR/$DOTFILE -e $ENTRYPOINTS_DIR/$ENTRYPOINTFILE -w $APK_DIRNAME/$APK_BASENAME/$DOTFILE_BNAME.callgraph -m $ENTRYPOINTS_DIR/$DOTFILE_BNAME".map"
+        CALLGRAPHS_PATHS+=$APK_DIRNAME/$APK_BASENAME/$DOTFILE_BNAME.callgraph":"$(dirname $ENTRYPOINTS_DIR/$ENTRYPOINTFILE)/$(basename $ENTRYPOINTS_DIR/$ENTRYPOINTFILE .entrypoints)"|"
+    done
+fi
 
 OPTS=""
 
@@ -79,10 +84,10 @@ fi
 
 if [ ! -z "$CALLGRAPHS_PATHS" ]
 then
-    java -jar ../target/JuCify-0.1-jar-with-dependencies.jar -a $APK_PATH -p $PLATFORMS_PATH -f $CALLGRAPHS_PATHS $OPTS
-else
-    print_info "Not executing JuCify"
+    OPTS+="-f $CALLGRAPHS_PATHS"
 fi
+
+java -jar ../target/JuCify-0.1-jar-with-dependencies.jar -a $APK_PATH -p $PLATFORMS_PATH $OPTS
 
 if [ "$CLEAN" = true ]
 then
