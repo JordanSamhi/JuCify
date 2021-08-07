@@ -1,5 +1,7 @@
 SOURCE|<android.telephony.TelephonyManager: java.lang.String getImei()>
 SOURCE|<android.telephony.TelephonyManager: java.lang.String getDeviceId()>
+SINK|<android.telephony.SmsManager: void sendTextMessage(java.lang.String,java.lang.String,java.lang.String,android.app.PendingIntent,android.app.PendingIntent)>
+SINK|<android.telephony.SmsManager: void sendTextMessage(java.lang.String,java.lang.String,java.lang.String,android.app.PendingIntent,android.app.PendingIntent,long)>
 SINK|<android.util.Log: int d(java.lang.String,java.lang.String)>
 SINK|<android.util.Log: int i(java.lang.String,java.lang.String)>
 SINK|<java.lang.String: boolean startsWith(java.lang.String)>
