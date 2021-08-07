@@ -56,7 +56,7 @@ unzip -o $APK_PATH -d $DST > /dev/null 2>&1
 ENTRYPOINTFILES=$(ls -1 $ENTRYPOINTS_DIR|grep entrypoints)
 if [ ! -z "$ENTRYPOINTFILES" ]
 then
-    for $ENTRYPOINTFILE in $ENTRYPOINTFILES
+    for ENTRYPOINTFILE in $ENTRYPOINTFILES
     do
         DOTFILE=$(basename $ENTRYPOINTFILE .result.entrypoints)".dot"
         DOTFILE_BNAME=$(basename $DOTFILE .dot)

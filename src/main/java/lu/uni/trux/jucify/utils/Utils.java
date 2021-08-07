@@ -103,7 +103,7 @@ public class Utils {
 					i++;
 					continue;
 				}
-				if(c == 'L' || c == '[') {
+				if(c == 'L') {
 					tmpStr = new StringBuilder();
 					while(c != ';') {
 						c = params.charAt(i);
@@ -111,7 +111,12 @@ public class Utils {
 						i++;
 					}
 					paramsList.add(getCompactTypesToJimpleTypes(tmpStr.toString()));
-				}else {
+				}else if (c == '[') {
+					tmpStr = new StringBuilder();
+					tmpStr.append(params.charAt(++i));
+					paramsList.add(String.format("%s[]", tmpStr.toString()));
+				}
+				else {
 					paramsList.add(getCompactTypesToJimpleTypes(String.valueOf(c)));
 					i++;
 				}
@@ -139,7 +144,11 @@ public class Utils {
 		if(key.startsWith("L")) {
 			return key.substring(1, key.length() - 1).replace("/", ".");
 		}else if(key.startsWith("[")) {
-			return String.format("%s[]", key.substring(2, key.length() - 1).replace("/", "."));
+			if(key.contains(";")) {
+				return String.format("%s[]", key.substring(2, key.length() - 1).replace("/", "."));
+			}else {
+				return String.format("%s[]", key.substring(1, key.length() - 1).replace("/", "."));
+			}
 		}
 		return compactTypesToJimpleTypes.get(key);
 	}
