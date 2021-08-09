@@ -76,6 +76,7 @@ public class FlowAnalysis {
 						List<Stmt> path = Arrays.asList(source.getPath());
 						if(pathContainCallToNativeMethods(path)) {
 							if (path != null && !path.isEmpty()) {
+								ResultsAccumulator.v().setHasFlowThroughNative(true);
 								if(!this.raw) {
 									CustomPrints.psuccess("Found path through native code: ");
 									System.out.println("  - From " + source);
