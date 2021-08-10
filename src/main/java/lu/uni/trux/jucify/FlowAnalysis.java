@@ -70,7 +70,6 @@ public class FlowAnalysis {
 		}
 		if(results != null) {
 			if(results.getResults() != null && !results.getResults().isEmpty()) {
-				ResultsAccumulator.v().setHasFlowThroughNative(true);
 				for (ResultSinkInfo sink : results.getResults().keySet()) {
 					for (ResultSourceInfo source : results.getResults().get(sink)) {
 						List<Stmt> path = Arrays.asList(source.getPath());
