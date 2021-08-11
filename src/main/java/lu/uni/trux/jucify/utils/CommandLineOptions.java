@@ -51,6 +51,7 @@ public class CommandLineOptions {
 	private static final Triplet<String, String, String> FILES = new Triplet<String, String, String>("files", "f", "Specify the files to load (dot file -> entrypoint file)");
 	private static final Triplet<String, String, String> EXPORT_CG = new Triplet<String, String, String>("export-cg-to-dot", "e", "Export call graph to dot file");
 	private static final Triplet<String, String, String> EXPORT_CG_TXT = new Triplet<String, String, String>("export-cg-to-txt", "c", "Export call graph to txt file");
+	private static final Triplet<String, String, String> EXPORT_CG_BEFORE_PROCESSING_TXT = new Triplet<String, String, String>("export-cg-before-processing-to-txt", "b", "Export call graph before being processed by JuCify to txt file");
 	private static final Triplet<String, String, String> TIMEOUT = new Triplet<String, String, String>("timeout", "t", "Set the timeout for analysis");
 	private static final Triplet<String, String, String> TAINT_ANALYSIS = new Triplet<String, String, String>("taintanalysis", "ta", "Run taint analysis on APK");
 	private static final Triplet<String, String, String> PLATFORMS =
@@ -148,6 +149,14 @@ public class CommandLineOptions {
 				.argName(EXPORT_CG_TXT.getValue0())
 				.required(false)
 				.build();
+		
+		final Option export_cg_before_processing_txt = Option.builder(EXPORT_CG_BEFORE_PROCESSING_TXT.getValue1())
+				.longOpt(EXPORT_CG_BEFORE_PROCESSING_TXT.getValue0())
+				.desc(EXPORT_CG_BEFORE_PROCESSING_TXT.getValue2())
+				.hasArg(true)
+				.argName(EXPORT_CG_BEFORE_PROCESSING_TXT.getValue0())
+				.required(false)
+				.build();
 
 		final Option platforms = Option.builder(PLATFORMS.getValue1())
 				.longOpt(PLATFORMS.getValue0())
@@ -173,6 +182,7 @@ public class CommandLineOptions {
 		this.options.addOption(export_cg_txt);
 		this.options.addOption(raw);
 		this.options.addOption(ta);
+		this.options.addOption(export_cg_before_processing_txt);
 
 		for(Option o : this.firstOptions.getOptions()) {
 			this.options.addOption(o);
@@ -217,8 +227,16 @@ public class CommandLineOptions {
 		return this.cmdLine.getOptionValue(EXPORT_CG_TXT.getValue0());
 	}
 	
+	public String getExportCallGraphBeforeProcessingTxtDestination() {
+		return this.cmdLine.getOptionValue(EXPORT_CG_BEFORE_PROCESSING_TXT.getValue0());
+	}
+	
 	public boolean hasExportCallGraphTxt() {
 		return this.cmdLine.hasOption(EXPORT_CG_TXT.getValue1());
+	}
+	
+	public boolean hasExportCallBeforeProcessingGraphTxt() {
+		return this.cmdLine.hasOption(EXPORT_CG_BEFORE_PROCESSING_TXT.getValue1());
 	}
 	
 	public boolean hasTaintAnalysis() {

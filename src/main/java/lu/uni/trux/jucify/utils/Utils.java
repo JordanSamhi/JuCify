@@ -1,5 +1,7 @@
 package lu.uni.trux.jucify.utils;
 
+import java.io.FileWriter;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -272,5 +274,49 @@ public class Utils {
 
 	public static int getNumberOfEdgesInCG(CallGraph cg) {
 		return cg.size();
+	}
+	
+	public static void exportCallGraphTxT(CallGraph cg, String destination) {
+		FileWriter writer = null;
+		try {
+			writer = new FileWriter(destination);
+		} catch (IOException e) {
+			System.err.println(e.getMessage());
+		} 
+		Iterator<Edge> it = cg.iterator();
+		Iterator<Edge> itMet = null;
+		List<String> tgts = new ArrayList<String>();
+		Edge next = null;
+		SootMethod tgt = null;
+		List<SootMethod> visitedMethods = new ArrayList<SootMethod>();
+		while(it.hasNext()) {
+			next = it.next();
+			SootMethod src = next.src();
+			if(!visitedMethods.contains(src)) {
+				visitedMethods.add(src);
+				itMet = cg.edgesOutOf(src);
+				tgts.clear();
+				while(itMet.hasNext()) {
+					tgt = itMet.next().tgt();
+					if(tgt.isDeclared()) {
+						if(!tgts.contains(tgt.getSignature())) {
+							tgts.add(tgt.getSignature());
+						}
+					}
+				}
+				if(src.isDeclared()) {
+					try {
+						writer.write(String.format("%s ==> ['%s\\n']%s", src, String.join("\\n','", tgts), System.lineSeparator()));
+					} catch (IOException e) {
+						System.err.println(e.getMessage());
+					}
+				}
+			}
+		}
+		try {
+			writer.close();
+		} catch (IOException e) {
+			System.err.println(e.getMessage());
+		}
 	}
 }

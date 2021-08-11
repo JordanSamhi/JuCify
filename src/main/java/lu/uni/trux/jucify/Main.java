@@ -1,9 +1,6 @@
 package lu.uni.trux.jucify;
 
-import java.io.FileWriter;
-import java.util.ArrayList;
 import java.util.Date;
-import java.util.Iterator;
 import java.util.List;
 
 import org.apache.commons.io.FilenameUtils;
@@ -16,7 +13,6 @@ import lu.uni.trux.jucify.utils.Constants;
 import lu.uni.trux.jucify.utils.CustomPrints;
 import lu.uni.trux.jucify.utils.Utils;
 import soot.Scene;
-import soot.SootMethod;
 import soot.jimple.infoflow.InfoflowConfiguration.CodeEliminationMode;
 import soot.jimple.infoflow.InfoflowConfiguration.PathReconstructionMode;
 import soot.jimple.infoflow.android.InfoflowAndroidConfiguration;
@@ -24,7 +20,6 @@ import soot.jimple.infoflow.android.InfoflowAndroidConfiguration.SootIntegration
 import soot.jimple.infoflow.android.SetupApplication;
 import soot.jimple.infoflow.android.manifest.ProcessManifest;
 import soot.jimple.toolkits.callgraph.CallGraph;
-import soot.jimple.toolkits.callgraph.Edge;
 
 /*-
  * #%L
@@ -71,6 +66,10 @@ public class Main {
 		SetupApplication sa = new SetupApplication(ifac);
 		sa.constructCallgraph();
 		CallGraph cg = Scene.v().getCallGraph();
+		
+		if(options.hasExportCallBeforeProcessingGraphTxt()) {
+			Utils.exportCallGraphTxT(cg, options.getExportCallGraphBeforeProcessingTxtDestination());
+		}
 
 		ProcessManifest pm = new  ProcessManifest(apk);
 		if(!options.hasRaw()) {
@@ -131,35 +130,9 @@ public class Main {
 		}
 
 		if(options.hasExportCallGraphTxt()) {
-			FileWriter writer = new FileWriter(options.getExportCallGraphTxtDestination()); 
-			Iterator<Edge> it = cg.iterator();
-			Iterator<Edge> itMet = null;
-			List<String> tgts = new ArrayList<String>();
-			Edge next = null;
-			SootMethod tgt = null;
-			List<SootMethod> visitedMethods = new ArrayList<SootMethod>();
-			while(it.hasNext()) {
-				next = it.next();
-				SootMethod src = next.src();
-				if(!visitedMethods.contains(src)) {
-					visitedMethods.add(src);
-					itMet = cg.edgesOutOf(src);
-					tgts.clear();
-					while(itMet.hasNext()) {
-						tgt = itMet.next().tgt();
-						if(tgt.isDeclared()) {
-							if(!tgts.contains(tgt.getSignature())) {
-								tgts.add(tgt.getSignature());
-							}
-						}
-					}
-					if(src.isDeclared()) {
-						writer.write(String.format("%s ==> ['%s\\n']%s", src, String.join("\\n','", tgts), System.lineSeparator()));
-					}
-				}
-			}
-			writer.close();
+			Utils.exportCallGraphTxT(cg, options.getExportCallGraphTxtDestination());
 		}
+		
 		pm.close();
 
 		analysisTime.stop();
