@@ -5,9 +5,10 @@
 RAW=false
 TAINT_ANALYSIS=false
 EXPORT_CG_DST=false
+EXPORT_CG_BEFORE_JUCIFY_DST=false
 CLEAN=false
 
-while getopts f:p:rcte option
+while getopts f:p:rcteb option
 do
     case "${option}"
         in
@@ -15,6 +16,7 @@ do
         p) PLATFORMS_PATH=${OPTARG};;
         r) RAW=true;;
         e) EXPORT_CG_DST=true;;
+        b) EXPORT_CG_BEFORE_JUCIFY_DST=true;;
         t) TAINT_ANALYSIS=true;;
         c) CLEAN=true;;
     esac
@@ -79,7 +81,12 @@ fi
 
 if [ "$EXPORT_CG_DST" = true ]
 then
-    OPTS+="-c $APK_DIRNAME/"$APK_BASENAME"_cg.txt"
+    OPTS+="-c $APK_DIRNAME/"$APK_BASENAME"_cg_after.txt "
+fi
+
+if [ "$EXPORT_CG_BEFORE_JUCIFY_DST" = true ]
+then
+    OPTS+="-b $APK_DIRNAME/"$APK_BASENAME"_cg_before.txt "
 fi
 
 if [ ! -z "$CALLGRAPHS_PATHS" ]
@@ -91,5 +98,5 @@ java -jar ../target/JuCify-0.1-jar-with-dependencies.jar -a $APK_PATH -p $PLATFO
 
 if [ "$CLEAN" = true ]
 then
-    rm -rf $APK_DIRNAME/$APK_BASENAME $APK_DIRNAME/$ENTRYPOINTS_DIR $APK_DIRNAME/$APK_BASENAME"_cg.txt"
+    rm -rf $APK_DIRNAME/$APK_BASENAME $ENTRYPOINTS_DIR
 fi
