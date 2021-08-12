@@ -13,5 +13,5 @@ while [[ $lim -gt 0 ]] ; do
 done
 if [[ $lim -gt -9 ]] ; then
     pkill -P $pid
-    kill -9 -$pid
+    kill -9 $pid
 fi
