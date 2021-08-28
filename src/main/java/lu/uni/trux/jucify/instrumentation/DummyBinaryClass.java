@@ -6,9 +6,9 @@ import java.util.List;
 
 import org.javatuples.Pair;
 
+import lu.uni.trux.jucify.callgraph.SymbolStorage;
 import lu.uni.trux.jucify.utils.Constants;
 import lu.uni.trux.jucify.utils.Utils;
-import polyglot.types.reflect.Constant;
 import soot.Body;
 import soot.IntType;
 import soot.Local;
@@ -98,7 +98,7 @@ public class DummyBinaryClass {
 		this.clazz.addMethod(sm);
 	}
 
-	public SootMethod addBinaryMethod(String name, Type t, int modifiers, List<Type> params) {
+	public SootMethod addBinaryMethod(String name, Type t, int modifiers, List<Type> params, boolean opaquePredicateGeneration) {
 		SootMethod sm = new SootMethod(name,
 				params, t, Modifier.PUBLIC);
 		JimpleBody body = Jimple.v().newBody(sm);
@@ -107,30 +107,34 @@ public class DummyBinaryClass {
 		UnitPatchingChain units = body.getUnits();
 		Local thisLocal = lg.generateLocal(RefType.v(Constants.DUMMY_BINARY_CLASS));
 		units.add(Jimple.v().newIdentityStmt(thisLocal, Jimple.v().newThisRef(RefType.v(Constants.DUMMY_BINARY_CLASS))));
+		SymbolStorage.storage.addSymbol(body, "param_#0", thisLocal);
 		Local l = null;
 		int c = 0;
 		for(Type type: params) {
 			l = lg.generateLocal(type);
 			units.add(Jimple.v().newIdentityStmt(l, Jimple.v().newParameterRef(type, c++)));
+			SymbolStorage.storage.addSymbol(body, "param_#"+c, thisLocal);
 		}
-		Stmt ret = null;
-		Local retLoc = null;
-		if(t.equals(VoidType.v())) {
-			ret = Jimple.v().newReturnVoidStmt();
-		}else {
-			retLoc = lg.generateLocal(t);
-			ret = Jimple.v().newReturnStmt(retLoc);
-		}
-		units.add(ret);
-		if(retLoc != null) {
-			this.checkOpaquePredicateLocalExistence(body);
-			for(Local local: body.getLocals()) {
-				if(local.getType().equals(t) && !local.equals(retLoc)) {
+		if(opaquePredicateGeneration) {
+			Stmt ret = null;
+			Local retLoc = null;
+			if(t.equals(VoidType.v())) {
+				ret = Jimple.v().newReturnVoidStmt();
+			}else {
+				retLoc = lg.generateLocal(t);
+				ret = Jimple.v().newReturnStmt(retLoc);
+			}
+			units.add(ret);
+			if(retLoc != null) {
+				this.checkOpaquePredicateLocalExistence(body);
+				for(Local local: body.getLocals()) {
+					if(local.getType().equals(t) && !local.equals(retLoc)) {
 					this.addOpaquePredicateForReturn(body, units.getLast(), Jimple.v().newReturnStmt(local));
 				}
 			}
 		}
 		body.validate();
+		}
 		this.clazz.addMethod(sm);
 		return sm;
 	}

@@ -7,13 +7,12 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Date;
+import java.util.Base64;
+import java.util.Base64.Decoder;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 import org.javatuples.Pair;
 
@@ -24,14 +23,14 @@ import guru.nidi.graphviz.model.MutableGraph;
 import guru.nidi.graphviz.model.MutableNode;
 import guru.nidi.graphviz.parse.Parser;
 import lu.uni.trux.jucify.ResultsAccumulator;
+import lu.uni.trux.jucify.callgraph.symbevent.InvokeEvent;
+import lu.uni.trux.jucify.callgraph.symbevent.ReturnEvent;
 import lu.uni.trux.jucify.instrumentation.DummyBinaryClass;
 import lu.uni.trux.jucify.utils.Constants;
 import lu.uni.trux.jucify.utils.CustomPrints;
 import lu.uni.trux.jucify.utils.Utils;
 import soot.Body;
-import soot.IntType;
 import soot.Local;
-import soot.LongType;
 import soot.Modifier;
 import soot.RefType;
 import soot.Scene;
@@ -45,11 +44,9 @@ import soot.VoidType;
 import soot.javaToJimple.LocalGenerator;
 import soot.jimple.AssignStmt;
 import soot.jimple.IdentityStmt;
-import soot.jimple.IntConstant;
 import soot.jimple.InvokeExpr;
 import soot.jimple.InvokeStmt;
 import soot.jimple.Jimple;
-import soot.jimple.LongConstant;
 import soot.jimple.NewExpr;
 import soot.jimple.Stmt;
 import soot.jimple.toolkits.callgraph.CallGraph;
@@ -68,7 +65,8 @@ public class CallGraphPatcher {
 		this.newReachableNodes = new ArrayList<SootMethod>();
 	}
 
-	public void importBinaryCallGraph(List<Pair<String, String>> files) {
+	public void importBinaryCallGraph(List<Pair<String, String>> files, boolean useSymbolicGeneration) {
+		
 		MutableGraph g = null;
 		InputStream dot = null;
 		String name = null,
@@ -84,8 +82,6 @@ public class CallGraphPatcher {
 
 		Map<String, SootMethod> nodesToMethods = new HashMap<String, SootMethod>();
 
-	    Pattern list_pattern = Pattern.compile(".*\\[(.*)\\].*");	
-
 		try {
 			for(Pair<String, String> pair: files) {
 				dotFile = pair.getValue0();
@@ -99,22 +95,23 @@ public class CallGraphPatcher {
 					System.exit(1);
 				}
 
-
 				BufferedReader is = new BufferedReader(new FileReader(entrypoints));
 				List<Pair<String, SootMethod>> javaToNative = new ArrayList<Pair<String, SootMethod>>();
-				Map<String, List<Pair<SootMethod,List<String>>>> nativeToJava = new HashMap<String, List<Pair<SootMethod,List<String>>>>();
+				Map<String, Pair<ConditionalSymbExprTree, List<SootMethod>>> nativeToJava = new HashMap<String, Pair<ConditionalSymbExprTree, List<SootMethod>>>();
 				Stmt stmt = null;
 				InvokeExpr ie = null;
-				List<Pair<SootMethod,List<String>>> javaTargets = null;
+				List<SootMethod> javaTargets = null;
+				Map<SootMethod, ConditionalSymbExprTree> nativeContent = new HashMap<SootMethod, ConditionalSymbExprTree>();
 				for(String line = is.readLine(); line != null; line = is.readLine()) {
-					if(line.startsWith(Constants.HEADER_ENTRYPOINTS_FILE)) {
+					if(line.startsWith(Constants.COMMENT_ENTRYPOINTS_FILE)) {
 						continue;
 					}
-					String[] split = line.split(",");
-					String clazz = split[0].trim();
-					String method = split[1].trim();
-					String sig = split[2].trim();
-					String target = split[3].trim();
+					String[] split = line.split(",(?=([^\"]*\"[^\"]*\")*[^\"]*$)"); // https://stackoverflow.com/questions/15738918/splitting-a-csv-file-with-quotes-as-text-delimiter-using-string-split
+					int type = Integer.parseInt(split[0].trim());
+					String clazz = split[1].trim();
+					String method = split[2].trim();
+					String sig = split[3].trim();
+					String target = split[4].trim();
 					Pair<String, String> pairNewSig = Utils.compactSigtoJimpleSig(sig);
 					String newSig = Utils.toJimpleSignature(clazz, pairNewSig.getValue1(), method, pairNewSig.getValue0());
 					if(!Scene.v().containsMethod(newSig)) {
@@ -138,29 +135,90 @@ public class CallGraphPatcher {
 					}
 
 					// HANDLE NATIVE TO JAVA CALLS
-					if(split.length > 9) {
-						String invokeeClass = split[5].trim();
-						String invokeeMethod = split[6].trim();
-						String invokeeSig = split[7].trim();
-						Matcher matcher = list_pattern.matcher(line);
-						List<String> argument_expressions = new ArrayList<>();;
-						if(matcher.find()) {
-							String match = matcher.group(1);
-							if(!match.equals(""))
-								argument_expressions = Arrays.asList(match.split(","));
-						}
+					if(split.length > 12 && type == Constants.JAVA_INVOKEE) {
+						String invokeeClass = split[6].trim();
+						String invokeeMethod = split[7].trim();
+						String invokeeSig = split[8].trim();
+						
 						pairNewSig = Utils.compactSigtoJimpleSig(invokeeSig);
 						newSig = Utils.toJimpleSignature(invokeeClass, pairNewSig.getValue1(), invokeeMethod, pairNewSig.getValue0());
 						if(!Scene.v().containsMethod(newSig)) {
 							Utils.addPhantomMethod(newSig);
 						}
 						sm = Scene.v().getMethod(newSig);
-						javaTargets = nativeToJava.get(target);
-						if(javaTargets == null) {
-							javaTargets = new ArrayList<>();
-							nativeToJava.put(target, javaTargets);
+
+						String argument_expressions_csv = split[11].trim();
+						argument_expressions_csv = argument_expressions_csv.substring(1, argument_expressions_csv.length() - 1);
+						List<String> argument_expressions = Arrays.asList(argument_expressions_csv.split("\\s*,\\s*")); //https://stackoverflow.com/questions/7488643/how-to-convert-comma-separated-string-to-list
+						List<Ast.Base> parsed_arg_expressions = new ArrayList<Ast.Base>();
+						for(String arg : argument_expressions) {
+							if(!arg.isEmpty()) {
+								Decoder decoder = Base64.getDecoder();
+								Ast.Base parsed_arg = Ast.Base.parseFrom(decoder.decode(arg));
+								parsed_arg_expressions.add(parsed_arg);
+							}
 						}
-						javaTargets.add(new Pair<>(sm, argument_expressions));
+
+						String return_value_name = split[12].trim();
+
+						int cond_bits = Integer.parseInt(split[13].trim());
+						int cond_n_bits = Integer.parseInt(split[14].trim());
+						String cond_csv = split[15].trim();
+						cond_csv = cond_csv.substring(1, cond_csv.length() - 1);
+						List<String> cond_expressions = Arrays.asList(cond_csv.split("\\s*,\\s*")); //https://stackoverflow.com/questions/7488643/how-to-convert-comma-separated-string-to-list
+						List<Ast.Base> parsed_cond_expressions = new ArrayList<Ast.Base>();
+						for(String cond : cond_expressions) {
+							if(!cond.isEmpty()) {
+								Decoder decoder = Base64.getDecoder();
+								Ast.Base parsed_cond = Ast.Base.parseFrom(decoder.decode(cond));
+								parsed_cond_expressions.add(parsed_cond);
+							}
+						}
+						
+						ConditionalSymbExprTree condTree = nativeContent.get(nativeMethod);
+						if(condTree == null) {
+							condTree = new ConditionalSymbExprTree();
+							nativeContent.put(nativeMethod, condTree);
+						}
+						condTree.addLeaf(cond_bits, cond_n_bits, parsed_cond_expressions, new InvokeEvent(sm, parsed_arg_expressions, return_value_name, this));						
+						
+						Pair<ConditionalSymbExprTree, List<SootMethod>> p = nativeToJava.get(target);
+						if(p == null) {
+							javaTargets = new ArrayList<>();
+							p = new Pair<ConditionalSymbExprTree, List<SootMethod>>(new ConditionalSymbExprTree(), javaTargets);
+							nativeToJava.put(target, p);
+						}
+						javaTargets = p.getValue1();
+						javaTargets.add(sm);
+					}
+					
+					// HANDLE NATIVER RETURN VALUES
+					else if (split.length > 9 && type == Constants.RETURN_VALUE) {
+						Decoder decoder = Base64.getDecoder();
+
+						String ret_value_csv = split[6].trim();
+						Ast.Base parsed_ret_value = Ast.Base.parseFrom(decoder.decode(ret_value_csv));
+
+						int cond_bits = Integer.parseInt(split[7].trim());
+						int cond_n_bits = Integer.parseInt(split[8].trim());
+						String cond_csv = split[9].trim();
+						cond_csv = cond_csv.substring(1, cond_csv.length() - 1);
+						List<String> cond_expressions = Arrays.asList(cond_csv.split("\\s*,\\s*")); // https://stackoverflow.com/questions/7488643/how-to-convert-comma-separated-string-to-list
+						List<Ast.Base> parsed_cond_expressions = new ArrayList<Ast.Base>();
+						for (String cond : cond_expressions) {
+							if(!cond.isEmpty()) {
+								Ast.Base parsed_cond = Ast.Base.parseFrom(decoder.decode(cond));
+								parsed_cond_expressions.add(parsed_cond);
+							}
+						}
+
+						ConditionalSymbExprTree condTree = nativeContent.get(nativeMethod);
+						if (condTree == null) {
+							condTree = new ConditionalSymbExprTree();
+							nativeContent.put(nativeMethod, condTree);
+						}
+						condTree.addLeaf(cond_bits, cond_n_bits, parsed_cond_expressions,
+								new ReturnEvent(parsed_ret_value));
 					}
 				}
 				is.close();
@@ -172,7 +230,7 @@ public class CallGraphPatcher {
 					if(!nodesToMethods.containsKey(name)) {
 						sm = DummyBinaryClass.v().addBinaryMethod(name,
 								m.getReturnType(), m.getModifiers(),
-								m.getParameterTypes());
+								m.getParameterTypes(), !useSymbolicGeneration);
 						nodesToMethods.put(name, sm);
 						for(SootClass sc: Scene.v().getApplicationClasses()) {
 							for(SootMethod met: sc.getMethods()) {
@@ -232,119 +290,31 @@ public class CallGraphPatcher {
 								}
 							}
 						}
-						// Handle Native to Java
-						javaTargets = nativeToJava.get(name);
-						Unit lastAdded = null,
-								insertPoint = null;
-						if(javaTargets != null && !javaTargets.isEmpty()) {
-							List<Value> return_values = new ArrayList<>(); // List of values returned by the added invocations
-							for(Pair<SootMethod, List<String>> invoke_info: javaTargets) {
-								SootMethod met = invoke_info.getValue0();
-								List<String> argument_expressions = invoke_info.getValue1();
-								Type ret = met.getReturnType();
-								Body b = sm.retrieveActiveBody();
-								Stmt newStmt = null;
-								Local local = null;
-								LocalGenerator lg = new LocalGenerator(b);
-								local = DummyBinaryClass.v().getOrGenerateLocal(b, this.getfirstAfterIdenditiesUnits(b), met.getDeclaringClass().getType());
+						
 
-								// First try to use symbols to generate invokee arguments
-								boolean symbolic_generation_done = false;
-								if(argument_expressions.size() > 0) {
-									boolean parsing_ok = true;
-									// Construct parameters using symbols
-									List<Value> parameters = new ArrayList<Value>();
-									int arg_number = 0;
-									Pattern pattern = Pattern.compile("<BV32 ([a-zA-Z0-9_#]+)>");
-									for(String arg_angr_str : argument_expressions) {	
-										Type arg_type = met.getParameterType(arg_number);
-										
-										// TODO: Only simple symbols (BV32) are currently parsed
-										// Full angr expression should be parsed
-								        Matcher matcher = pattern.matcher(arg_angr_str);
-										if(!matcher.find()) {
-											parsing_ok = false;
-											break;
-										}
-										String symbol_name = matcher.group(1);			
-										Value corresponding_jimple_value = null;
-										if(symbol_name.startsWith("param")) {
-											int parameter_number = Integer.parseInt(symbol_name.split("_")[1].substring(1));
-											corresponding_jimple_value = sm.getActiveBody().getParameterLocal(parameter_number);
-										}
-										else if(symbol_name.startsWith("return")) {
-											int return_number = Integer.parseInt(symbol_name.split("_")[1].substring(1)) - 1;
-											System.out.println(symbol_name);
-											System.out.println(return_number);
-											System.out.println(return_values);
-											if(return_values.size() > return_number) {
-												corresponding_jimple_value = return_values.get(return_number);												
-											} else {
-												parsing_ok = false;
-												break;												
-											}
-										}
-										else if(symbol_name.startsWith("0x")) {
-											int immediate_number = Integer.parseInt(symbol_name.substring(2), 16);
-											if(arg_type instanceof IntType) {
-												corresponding_jimple_value = IntConstant.v(immediate_number);
-											} else if (arg_type instanceof LongType) {
-												corresponding_jimple_value = LongConstant.v(immediate_number);
-											} else {
-												parsing_ok = false;
-												break;	
-											}
-										} else {
-											parsing_ok = false;
-											break;											
-										}										
-										
-										if(corresponding_jimple_value != null) {
-											parameters.add(corresponding_jimple_value);
-										} else {
-											parsing_ok = false;
-											break;											
-										}
-										arg_number++;
-									}
-									
-									if(parsing_ok) {
-										// Create corresponding invoke statement
-										if(met.isConstructor()) {
-											ie = Jimple.v().newSpecialInvokeExpr(local, met.makeRef(), parameters);
-										}else if(met.isStatic()) {
-											ie = Jimple.v().newStaticInvokeExpr(met.makeRef(), parameters);
-										}else {
-											ie = Jimple.v().newVirtualInvokeExpr(local, met.makeRef(), parameters);
-										}
-									
-										// Stores return value if any
-										if(ret.equals(VoidType.v())) {
-											newStmt = Jimple.v().newInvokeStmt(ie);
-										}else {
-											local = lg.generateLocal(met.getReturnType());
-											newStmt = Jimple.v().newAssignStmt(local, ie);
-											return_values.add(local);
-										}
-									
-										// Add statements to the method body
-										if(newStmt != null) {
-											if(lastAdded == null) {
-												insertPoint = this.getfirstAfterIdenditiesUnitsAfterInit(b);
-												b.getUnits().insertBefore(newStmt, insertPoint);
-											}else {
-												insertPoint = lastAdded;
-												b.getUnits().insertAfter(newStmt, insertPoint);
-											}
-											lastAdded = newStmt;
-										}
-									
-										symbolic_generation_done = true;
-									}
-								}
-								
-								// If symbol usage failed, go to fallback mode (permutations and opaque predicate)
-								if(!symbolic_generation_done){
+						// Handle Native to Java	
+						if(useSymbolicGeneration) {
+							ConditionalSymbExprTree tree = nativeContent.get(m);
+							if(tree != null) {
+								Body b = sm.retrieveActiveBody();					
+								tree.generateCode(b, b.getUnits().getLast());
+							}
+						}						
+						else {						
+							Pair<ConditionalSymbExprTree, List<SootMethod>> pp = nativeToJava.get(name);
+							javaTargets = pp.getValue1();
+							Unit lastAdded = null,
+									insertPoint = null;
+							if(javaTargets != null && !javaTargets.isEmpty()) {
+								List<Value> return_values = new ArrayList<>(); // List of values returned by the added invocations
+								for(SootMethod met: javaTargets) {
+									Type ret = met.getReturnType();
+									Body b = sm.retrieveActiveBody();
+									Stmt newStmt = null;
+									Local local = null;
+									LocalGenerator lg = new LocalGenerator(b);
+									local = DummyBinaryClass.v().getOrGenerateLocal(b, this.getfirstAfterIdenditiesUnits(b), met.getDeclaringClass().getType());
+
 									int paramLength = met.getParameterCount();
 									List<Value> potentialParameters = new ArrayList<Value>();
 
@@ -405,25 +375,25 @@ public class CallGraphPatcher {
 											}
 										}
 									}
-								}
 
-								Edge e = new Edge(sm, newStmt, met);
-								this.cg.addEdge(e);
-								this.newReachableNodes.add(met);
-								ResultsAccumulator.v().incrementNumberNewNativeToJavaCallGraphEdges();
-								if(!raw) {
-									CustomPrints.pinfo(String.format("Adding native-to-java Edge from %s to %s", sm, met));
-								}
+									Edge e = new Edge(sm, newStmt, met);
+									this.cg.addEdge(e);
+									this.newReachableNodes.add(met);
+									ResultsAccumulator.v().incrementNumberNewNativeToJavaCallGraphEdges();
+									if(!raw) {
+										CustomPrints.pinfo(String.format("Adding native-to-java Edge from %s to %s", sm, met));
+									}
 									
-								if(!sm.getReturnType().equals(VoidType.v())) {
-									// FIX MULTIPLE RETURN OF SAME TYPE (OPAQUE PREDICATE)
-									final Local retLoc = local;
-									DummyBinaryClass.v().addOpaquePredicateForReturn(b, b.getUnits().getLast(), Jimple.v().newReturnStmt(retLoc));
+									if(!sm.getReturnType().equals(VoidType.v())) {
+										// FIX MULTIPLE RETURN OF SAME TYPE (OPAQUE PREDICATE)
+										final Local retLoc = local;
+										DummyBinaryClass.v().addOpaquePredicateForReturn(b, b.getUnits().getLast(), Jimple.v().newReturnStmt(retLoc));
+									}
 								}
-								
-								b.validate();
 							}
 						}
+						
+						sm.retrieveActiveBody().validate();
 					}						
 				}
 
@@ -431,7 +401,7 @@ public class CallGraphPatcher {
 				for(MutableNode node: g.nodes()) {
 					name = Utils.removeNodePrefix(node.name().toString());
 					if(!nodesToMethods.containsKey(name)) {
-						sm = DummyBinaryClass.v().addBinaryMethod(name, VoidType.v(), Modifier.PUBLIC, new ArrayList<>());
+						sm = DummyBinaryClass.v().addBinaryMethod(name, VoidType.v(), Modifier.PUBLIC, new ArrayList<>(), !useSymbolicGeneration);
 						nodesToMethods.put(name, sm);
 					}
 				}
@@ -508,6 +478,10 @@ public class CallGraphPatcher {
 			dg.drawEdge(next.src().getName(), next.tgt().getName());
 		}
 		dg.plot(destination);
+	}
+	
+	public CallGraph getCg() {
+		return this.cg;
 	}
 
 	public List<SootMethod> getNewReachableNodes() {

@@ -86,7 +86,7 @@ public class Main {
 		StopWatch instrumentationTime = new StopWatch("Instrumentation");
 		instrumentationTime.start("Instrumentation");
 		CallGraphPatcher cgp = new CallGraphPatcher(cg, options.hasRaw());
-		cgp.importBinaryCallGraph(files);
+		cgp.importBinaryCallGraph(files, !options.isSymbolicGenerationDisabled());
 		if(!options.hasRaw()) {
 			CustomPrints.psuccess("Binary callgraph imported.");
 		}
