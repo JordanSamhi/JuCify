@@ -116,4 +116,10 @@
 			<version>3.0.3</version>
 		</dependency>
 	</dependencies>
+	<repositories>
+		<repository>
+		  <id>swt-upb</id>
+			<url>https://soot-build.cs.uni-paderborn.de/nexus/repository/swt-upb</url>
+		</repository>
+	</repositories>
 </project>
