@@ -416,6 +416,7 @@ public class CallGraphPatcher {
 			}else if (!sm.getDeclaringClass().getType().equals(RefType.v(Constants.DUMMY_BINARY_CLASS)) && !b){
 				if(!s.contains(sm) && !Utils.wasMethodPreviouslyReachableInCallGraph(cg, sm)) {
 					s.add(sm);
+					s.addAll(Utils.wereSuccPreviouslyReachable(cg.edgesOutOf(sm), cg));
 				}
 			}
 		}

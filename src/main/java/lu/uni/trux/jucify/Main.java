@@ -20,7 +20,6 @@ import soot.jimple.infoflow.android.InfoflowAndroidConfiguration.SootIntegration
 import soot.jimple.infoflow.android.SetupApplication;
 import soot.jimple.infoflow.android.manifest.ProcessManifest;
 import soot.jimple.toolkits.callgraph.CallGraph;
-import soot.options.Options;
 
 /*-
  * #%L

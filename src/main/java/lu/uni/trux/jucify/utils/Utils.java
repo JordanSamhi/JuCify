@@ -89,6 +89,7 @@ public class Utils {
 	public static Pair<String, String> compactSigtoJimpleSig(String sig) {
 		sig = sig.trim();
 		String[] split = sig.split("\\)");
+		System.out.println(sig);
 		String ret = split[1];
 		String[] splitSplit = split[0].split("\\(");
 		String params = null;
@@ -250,6 +251,23 @@ public class Utils {
 			}
 		}
 		return found;
+	}
+	
+	public static List<SootMethod> wereSuccPreviouslyReachable(Iterator<Edge> edgesOutOf, CallGraph cg) {
+		Edge next = null;
+		List<SootMethod> methods = new ArrayList<SootMethod>();
+		SootMethod tgt = null;
+		while(edgesOutOf.hasNext()) {
+			next = edgesOutOf.next();
+			tgt = next.tgt();
+			if(!methods.contains(tgt)) {
+				if(!Utils.wasMethodPreviouslyReachableInCallGraph(cg, tgt)) {
+					methods.add(tgt);
+				}
+			}
+			methods.addAll(Utils.wereSuccPreviouslyReachable(cg.edgesOutOf(tgt), cg));
+		}
+		return methods;
 	}
 
 	public static int getNumberOfNodesInCG(CallGraph cg) {

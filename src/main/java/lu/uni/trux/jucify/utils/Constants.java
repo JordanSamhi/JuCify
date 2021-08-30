@@ -37,7 +37,7 @@ public class Constants {
 	public static final String NODE_PREFIX = "Node_";
 	public static final String INIT = "<init>";
 	public static final String GRAPH_NAME = "Graph Name";
-	public static final String HEADER_ENTRYPOINTS_FILE = "invoker_cls";
+	public static final String HEADER_ENTRYPOINTS_FILE = "#";
 	public static final String SOURCE = "SOURCE";
 	public static final String SINK = "SINK";
 	public static final String VOID = "void";
