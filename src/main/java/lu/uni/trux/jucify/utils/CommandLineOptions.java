@@ -46,6 +46,7 @@ import org.javatuples.Triplet;
  */
 public class CommandLineOptions {
 
+	private static final Triplet<String, String, String> DIS_SYMBOLIC_GEN = new Triplet<String, String, String>("disable-symbolic-gen", "s", "Disable symbolic code generation");
 	private static final Triplet<String, String, String> APK = new Triplet<String, String, String>("apk", "a", "Apk file");
 	private static final Triplet<String, String, String> HELP = new Triplet<String, String, String>("help", "h", "Print this message");
 	private static final Triplet<String, String, String> FILES = new Triplet<String, String, String>("files", "f", "Specify the files to load (dot file -> entrypoint file)");
@@ -95,6 +96,14 @@ public class CommandLineOptions {
 	 * Initialization of all recognized options
 	 */
 	private void initOptions() {
+		final Option dis_symbolic_gen = Option.builder(DIS_SYMBOLIC_GEN.getValue1())
+				.longOpt(DIS_SYMBOLIC_GEN.getValue0())
+				.desc(DIS_SYMBOLIC_GEN.getValue2())
+				.hasArg(false)
+				.argName(DIS_SYMBOLIC_GEN.getValue0())
+				.required(false)
+				.build();
+
 		final Option apk = Option.builder(APK.getValue1())
 				.longOpt(APK.getValue0())
 				.desc(APK.getValue2())
@@ -174,6 +183,7 @@ public class CommandLineOptions {
 
 		this.firstOptions.addOption(help);
 
+		this.options.addOption(dis_symbolic_gen);
 		this.options.addOption(apk);
 		this.options.addOption(platforms);
 		this.options.addOption(to);
@@ -213,6 +223,10 @@ public class CommandLineOptions {
             }
         }
 		return pairs;
+	}
+	
+	public boolean isSymbolicGenerationDisabled() {
+		return this.cmdLine.hasOption(DIS_SYMBOLIC_GEN.getValue1());
 	}
 	
 	public String getExportCallGraphDestination() {

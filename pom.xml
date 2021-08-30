@@ -115,5 +115,16 @@
 			<artifactId>trove4j</artifactId>
 			<version>3.0.3</version>
 		</dependency>
+		<dependency>
+			<groupId>com.google.protobuf</groupId>
+			<artifactId>protobuf-java</artifactId>
+    		<version>4.0.0-rc-2</version>
+		</dependency>
 	</dependencies>
+	<repositories>
+		<repository>
+		  <id>swt-upb</id>
+			<url>https://soot-build.cs.uni-paderborn.de/nexus/repository/swt-upb</url>
+		</repository>
+	</repositories>
 </project>
