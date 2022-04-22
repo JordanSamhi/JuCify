@@ -7,7 +7,7 @@ Unifying Android code for enhanced static analysis.
 ### Downloading the tool
 
 <pre>
-git clone https://github.com/JordanSamhi/JuCify.git
+git clone --recursive https://github.com/JordanSamhi/JuCify.git
 </pre>
 
 ### Installing the tool
