@@ -2,6 +2,8 @@
 
 Unifying Android code for enhanced static analysis.
 
+:warning: Please checkout to the following commit to use JuCify: 6897c58350773987da0a2c52a99fd4ebf1edc39e
+
 ## Getting started
 
 ### Downloading the tool
@@ -42,6 +44,14 @@ Options:
 * ```-ta``` : Perform taint analysis.
 * ```-c``` : Export call-graph to text file.
 * ```-e``` : Export call-graph to dot format.
+
+### Scripts
+
+Better use the following script to use JuCify as described in the paper.
+
+<pre>
+./main.sh -f PATH_TO_APK -p PATH_TO_PLATFORMS
+</pre>
 
 ## Built With
 
