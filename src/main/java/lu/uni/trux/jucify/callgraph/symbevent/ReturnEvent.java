@@ -7,8 +7,9 @@ import lu.uni.trux.jucify.callgraph.AstUtils;
 import soot.Body;
 import soot.Local;
 import soot.Unit;
+import soot.VoidType;
 import soot.jimple.Jimple;
-import soot.jimple.ReturnStmt;
+import soot.jimple.Stmt;
 
 public class ReturnEvent implements SymbolicEvent {
 	
@@ -19,10 +20,16 @@ public class ReturnEvent implements SymbolicEvent {
 	}
 	
 	public Unit generateCode(Body b, Unit u) {
-		Pair<Local, Unit> p = AstUtils.generateLocalFromAst(this.return_ast, b, u);
-		Local return_value = p.getValue0();
-		ReturnStmt retStmt = Jimple.v().newReturnStmt(return_value);
-		b.getUnits().insertAfter(retStmt, p.getValue1());
+		Stmt retStmt;
+		if(b.getMethod().getReturnType() != VoidType.v()) {		
+			Pair<Local, Unit> p = AstUtils.generateLocalFromAst(this.return_ast, b, u);
+			u = p.getValue1();
+			Local return_value = p.getValue0();
+			retStmt = Jimple.v().newReturnStmt(return_value);
+		} else {
+			retStmt = Jimple.v().newReturnVoidStmt();
+		}
+		b.getUnits().insertAfter(retStmt, u);
 		return retStmt;
 	}
 }

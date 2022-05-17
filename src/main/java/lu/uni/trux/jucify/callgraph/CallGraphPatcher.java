@@ -193,7 +193,7 @@ public class CallGraphPatcher {
 					}
 					
 					// HANDLE NATIVER RETURN VALUES
-					else if (split.length > 9 && type == Constants.RETURN_VALUE) {
+					else if (split.length > 9 && type == Constants.RETURN_VALUE && !nativeMethod.getReturnType().equals(VoidType.v())) {
 						Decoder decoder = Base64.getDecoder();
 
 						String ret_value_csv = split[6].trim();
