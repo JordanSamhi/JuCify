@@ -90,7 +90,7 @@ public class Main {
 		ResultsAccumulator.v().setNumberNodesBeforeJucify(Utils.getNumberOfNodesInCG(cg));
 		
 		CallGraphPatcher cgp = new CallGraphPatcher(cg, options.hasRaw());
-		cgp.importBinaryCallGraph(files);
+		cgp.importBinaryCallGraph(files, !options.isSymbolicGenerationDisabled());
 		if(!options.hasRaw()) {
 			CustomPrints.psuccess("Binary callgraph imported.");
 		}
