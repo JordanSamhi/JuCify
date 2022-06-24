@@ -18,10 +18,7 @@ public class SymbolStorage {
 	private SymbolStorage() {
 	}
 	
-	public Local getSymbol(Body b, String symbolName) {
-		return getSymbol(b, symbolName, UnknownType.v());
-	}
-	public Local getSymbol(Body b, String symbolName, Type defaultType) {
+	public Local getExistingSymbol(Body b, String symbolName) {
 		Map<String, Local> s = stores.get(b);
 		if (s != null) {
 			Local l = s.get(symbolName);
@@ -33,8 +30,25 @@ public class SymbolStorage {
 				if(l != null)
 					return l;
 			}
+			
+			if(symbolName.startsWith("##field##")) {
+				l = s.get(symbolName.split("_")[0]);
+				if(l != null)
+					return l;
+			}
 		}
-
+		return null;
+	}
+	
+	public Local getSymbol(Body b, String symbolName) {
+		return getSymbol(b, symbolName, UnknownType.v());
+	}
+	public Local getSymbol(Body b, String symbolName, Type defaultType) {
+		Local l = getExistingSymbol(b, symbolName);
+		if(l != null)
+			return l;
+		
+		Map<String, Local> s = stores.get(b);
 		LocalGenerator lg = new LocalGenerator(b);
 		Local local = lg.generateLocal(defaultType);
 		local.setName(symbolName);

@@ -89,7 +89,6 @@ public class Utils {
 	public static Pair<String, String> compactSigtoJimpleSig(String sig) {
 		sig = sig.trim();
 		String[] split = sig.split("\\)");
-		System.out.println(sig);
 		String ret = split[1];
 		String[] splitSplit = split[0].split("\\(");
 		String params = null;

@@ -40,6 +40,8 @@ public class Constants {
 	public static final String COMMENT_ENTRYPOINTS_FILE = "#";
 	public static final int JAVA_INVOKEE = 1;
 	public static final int RETURN_VALUE = 2;
+	public static final int GET_FIELD = 3;
+	public static final int SET_FIELD = 4;
 	public static final String SOURCE = "SOURCE";
 	public static final String SINK = "SINK";
 	public static final String VOID = "void";

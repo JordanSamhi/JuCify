@@ -23,8 +23,14 @@ import guru.nidi.graphviz.model.MutableGraph;
 import guru.nidi.graphviz.model.MutableNode;
 import guru.nidi.graphviz.parse.Parser;
 import lu.uni.trux.jucify.ResultsAccumulator;
+import lu.uni.trux.jucify.callgraph.symbevent.GetClassFieldEvent;
+import lu.uni.trux.jucify.callgraph.symbevent.GetFieldEvent;
+import lu.uni.trux.jucify.callgraph.symbevent.GetObjectFieldEvent;
 import lu.uni.trux.jucify.callgraph.symbevent.InvokeEvent;
 import lu.uni.trux.jucify.callgraph.symbevent.ReturnEvent;
+import lu.uni.trux.jucify.callgraph.symbevent.SetClassFieldEvent;
+import lu.uni.trux.jucify.callgraph.symbevent.SetFieldEvent;
+import lu.uni.trux.jucify.callgraph.symbevent.SetObjectFieldEvent;
 import lu.uni.trux.jucify.instrumentation.DummyBinaryClass;
 import lu.uni.trux.jucify.utils.Constants;
 import lu.uni.trux.jucify.utils.CustomPrints;
@@ -220,6 +226,81 @@ public class CallGraphPatcher {
 						condTree.addLeaf(cond_bits, cond_n_bits, parsed_cond_expressions,
 								new ReturnEvent(parsed_ret_value));
 					}
+					
+					// HANDLE GET FIELD
+					else if (split.length > 12 && type == Constants.GET_FIELD) {
+						Decoder decoder = Base64.getDecoder();
+						
+						boolean is_static = Boolean.parseBoolean(split[6].trim());
+						String field_name = split[9].trim();
+						
+						Ast.Base obj_ptr = Ast.Base.parseFrom(decoder.decode(split[7].trim()));
+						
+						GetFieldEvent event;
+						if(is_static) {
+							event = new GetClassFieldEvent(obj_ptr, split[8].trim(), field_name);
+						} else {
+							event = new GetObjectFieldEvent(obj_ptr, split[8].trim(), field_name);							
+						}
+						
+						int cond_bits = Integer.parseInt(split[10].trim());
+						int cond_n_bits = Integer.parseInt(split[11].trim());
+						String cond_csv = split[12].trim();
+						cond_csv = cond_csv.substring(1, cond_csv.length() - 1);
+						List<String> cond_expressions = Arrays.asList(cond_csv.split("\\s*,\\s*")); // https://stackoverflow.com/questions/7488643/how-to-convert-comma-separated-string-to-list
+						List<Ast.Base> parsed_cond_expressions = new ArrayList<Ast.Base>();
+						for (String cond : cond_expressions) {
+							if(!cond.isEmpty()) {
+								Ast.Base parsed_cond = Ast.Base.parseFrom(decoder.decode(cond));
+								parsed_cond_expressions.add(parsed_cond);
+							}
+						}
+
+						ConditionalSymbExprTree condTree = nativeContent.get(nativeMethod);
+						if (condTree == null) {
+							condTree = new ConditionalSymbExprTree();
+							nativeContent.put(nativeMethod, condTree);
+						}
+						condTree.addLeaf(cond_bits, cond_n_bits, parsed_cond_expressions, event);
+					}
+					
+					// HANDLE SET FIELD
+					else if (split.length > 12 && type == Constants.SET_FIELD) {
+						Decoder decoder = Base64.getDecoder();
+						
+						boolean is_static = Boolean.parseBoolean(split[6].trim());
+						String field_name = split[9].trim();
+						Ast.Base new_value = Ast.Base.parseFrom(decoder.decode(split[10].trim()));
+
+						Ast.Base obj_ptr = Ast.Base.parseFrom(decoder.decode(split[7].trim()));
+
+						SetFieldEvent event;
+						if(is_static) {
+							event = new SetClassFieldEvent(obj_ptr, split[8].trim(), field_name, new_value);							
+						} else {
+							event = new SetObjectFieldEvent(obj_ptr, split[8].trim(), field_name, new_value);								
+						}
+						
+						int cond_bits = Integer.parseInt(split[11].trim());
+						int cond_n_bits = Integer.parseInt(split[12].trim());
+						String cond_csv = split[13].trim();
+						cond_csv = cond_csv.substring(1, cond_csv.length() - 1);
+						List<String> cond_expressions = Arrays.asList(cond_csv.split("\\s*,\\s*")); // https://stackoverflow.com/questions/7488643/how-to-convert-comma-separated-string-to-list
+						List<Ast.Base> parsed_cond_expressions = new ArrayList<Ast.Base>();
+						for (String cond : cond_expressions) {
+							if(!cond.isEmpty()) {
+								Ast.Base parsed_cond = Ast.Base.parseFrom(decoder.decode(cond));
+								parsed_cond_expressions.add(parsed_cond);
+							}
+						}
+
+						ConditionalSymbExprTree condTree = nativeContent.get(nativeMethod);
+						if (condTree == null) {
+							condTree = new ConditionalSymbExprTree();
+							nativeContent.put(nativeMethod, condTree);
+						}
+						condTree.addLeaf(cond_bits, cond_n_bits, parsed_cond_expressions, event);
+					}
 				}
 				is.close();
 
@@ -300,7 +381,7 @@ public class CallGraphPatcher {
 								tree.generateCode(b, b.getUnits().getLast());
 							}
 						}						
-						else {						
+						else {					
 							Pair<ConditionalSymbExprTree, List<SootMethod>> pp = nativeToJava.get(name);
 							javaTargets = pp.getValue1();
 							Unit lastAdded = null,
@@ -392,9 +473,10 @@ public class CallGraphPatcher {
 								}
 							}
 						}
-						
-						sm.retrieveActiveBody().validate();
+
 						System.out.println(sm.retrieveActiveBody().toString());
+						// sm.retrieveActiveBody().validate();	
+						// TODO: fallback to no symbolic generation mode when symbolic one outputs an invalid method body
 					}						
 				}
 

@@ -1,12 +1,14 @@
 package lu.uni.trux.jucify.callgraph;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
 
 import org.javatuples.Pair;
 
+import lu.uni.trux.jucify.callgraph.symbevent.EventSorterForCodeGeneration;
 import lu.uni.trux.jucify.callgraph.symbevent.SymbolicEvent;
 import soot.Body;
 import soot.Unit;
@@ -71,6 +73,7 @@ public class ConditionalSymbExprTree {
 		if(ifList.size() > 0)
 			u = ifList.get(ifList.size()-1);
 		
+		Collections.sort(this.events, EventSorterForCodeGeneration.comparator);
 		for(SymbolicEvent ev : this.events) {
 			u = ev.generateCode(b, u);
 		}
