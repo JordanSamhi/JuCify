@@ -45,7 +45,8 @@ import org.javatuples.Triplet;
  *
  */
 public class CommandLineOptions {
-
+	
+	private static final Triplet<String, String, String> DIS_JNI_FIELD = new Triplet<String, String, String>("disable-jni-field", "j", "Disable jni field generation code generation");
 	private static final Triplet<String, String, String> DIS_SYMBOLIC_GEN = new Triplet<String, String, String>("disable-symbolic-gen", "s", "Disable symbolic code generation");
 	private static final Triplet<String, String, String> APK = new Triplet<String, String, String>("apk", "a", "Apk file");
 	private static final Triplet<String, String, String> HELP = new Triplet<String, String, String>("help", "h", "Print this message");
@@ -96,6 +97,14 @@ public class CommandLineOptions {
 	 * Initialization of all recognized options
 	 */
 	private void initOptions() {
+		final Option dis_jni_field = Option.builder(DIS_JNI_FIELD.getValue1())
+				.longOpt(DIS_JNI_FIELD.getValue0())
+				.desc(DIS_JNI_FIELD.getValue2())
+				.hasArg(false)
+				.argName(DIS_JNI_FIELD.getValue0())
+				.required(false)
+				.build();
+
 		final Option dis_symbolic_gen = Option.builder(DIS_SYMBOLIC_GEN.getValue1())
 				.longOpt(DIS_SYMBOLIC_GEN.getValue0())
 				.desc(DIS_SYMBOLIC_GEN.getValue2())
@@ -183,6 +192,7 @@ public class CommandLineOptions {
 
 		this.firstOptions.addOption(help);
 
+		this.options.addOption(dis_jni_field);
 		this.options.addOption(dis_symbolic_gen);
 		this.options.addOption(apk);
 		this.options.addOption(platforms);
@@ -223,6 +233,10 @@ public class CommandLineOptions {
             }
         }
 		return pairs;
+	}
+	
+	public boolean isJNIFieldDisabled() {
+		return this.cmdLine.hasOption(DIS_JNI_FIELD.getValue1());
 	}
 	
 	public boolean isSymbolicGenerationDisabled() {

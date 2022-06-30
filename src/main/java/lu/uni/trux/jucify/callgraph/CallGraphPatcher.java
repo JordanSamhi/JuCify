@@ -63,7 +63,7 @@ public class CallGraphPatcher {
 
 	private CallGraph cg;
 	private boolean raw;
-	private List <SootMethod> newReachableNodes;
+	private List<SootMethod> newReachableNodes;
 
 	public CallGraphPatcher(CallGraph cg, boolean raw) {
 		this.cg = cg;
@@ -71,31 +71,25 @@ public class CallGraphPatcher {
 		this.newReachableNodes = new ArrayList<SootMethod>();
 	}
 
-	public void importBinaryCallGraph(List<Pair<String, String>> files, boolean useSymbolicGeneration) {
-		
+	public void importBinaryCallGraph(List<Pair<String, String>> files, boolean useSymbolicGeneration,
+			boolean useJniFIeld) {
+
 		MutableGraph g = null;
 		InputStream dot = null;
-		String name = null,
-				nameTo = null,
-				nameFrom = null,
-				dotFile = null,
-				entrypoints = null;
+		String name = null, nameTo = null, nameFrom = null, dotFile = null, entrypoints = null;
 
-		SootMethod sm = null,
-				m = null,
-				from = null,
-				to = null;
+		SootMethod sm = null, m = null, from = null, to = null;
 
 		Map<String, SootMethod> nodesToMethods = new HashMap<String, SootMethod>();
 
 		try {
-			for(Pair<String, String> pair: files) {
+			for (Pair<String, String> pair : files) {
 				dotFile = pair.getValue0();
 				entrypoints = pair.getValue1();
 				dot = new FileInputStream(dotFile);
 				g = new Parser().read(dot);
-				if(dot == null || g == null) {
-					if(!raw) {
+				if (dot == null || g == null) {
+					if (!raw) {
 						CustomPrints.perror("Something wrong with dot file or mutable graph");
 					}
 					System.exit(1);
@@ -108,8 +102,8 @@ public class CallGraphPatcher {
 				InvokeExpr ie = null;
 				List<SootMethod> javaTargets = null;
 				Map<SootMethod, ConditionalSymbExprTree> nativeContent = new HashMap<SootMethod, ConditionalSymbExprTree>();
-				for(String line = is.readLine(); line != null; line = is.readLine()) {
-					if(line.startsWith(Constants.COMMENT_ENTRYPOINTS_FILE)) {
+				for (String line = is.readLine(); line != null; line = is.readLine()) {
+					if (line.startsWith(Constants.COMMENT_ENTRYPOINTS_FILE)) {
 						continue;
 					}
 					String[] split = line.split(",(?=([^\"]*\"[^\"]*\")*[^\"]*$)"); // https://stackoverflow.com/questions/15738918/splitting-a-csv-file-with-quotes-as-text-delimiter-using-string-split
@@ -119,19 +113,20 @@ public class CallGraphPatcher {
 					String sig = split[3].trim();
 					String target = split[4].trim();
 					Pair<String, String> pairNewSig = Utils.compactSigtoJimpleSig(sig);
-					String newSig = Utils.toJimpleSignature(clazz, pairNewSig.getValue1(), method, pairNewSig.getValue0());
-					if(!Scene.v().containsMethod(newSig)) {
+					String newSig = Utils.toJimpleSignature(clazz, pairNewSig.getValue1(), method,
+							pairNewSig.getValue0());
+					if (!Scene.v().containsMethod(newSig)) {
 						Utils.addPhantomMethod(newSig);
 					}
 					SootMethod nativeMethod = Scene.v().getMethod(newSig);
-					for(SootClass sc: Scene.v().getApplicationClasses()) {
-						for(SootMethod met: sc.getMethods()) {
-							if(met.isConcrete()) {
-								for(Unit u: met.retrieveActiveBody().getUnits()) {
+					for (SootClass sc : Scene.v().getApplicationClasses()) {
+						for (SootMethod met : sc.getMethods()) {
+							if (met.isConcrete()) {
+								for (Unit u : met.retrieveActiveBody().getUnits()) {
 									stmt = (Stmt) u;
-									if(stmt.containsInvokeExpr()) {
+									if (stmt.containsInvokeExpr()) {
 										ie = stmt.getInvokeExpr();
-										if(ie.getMethod().equals(nativeMethod)) {
+										if (ie.getMethod().equals(nativeMethod)) {
 											javaToNative.add(new Pair<>(target, nativeMethod));
 										}
 									}
@@ -141,24 +136,26 @@ public class CallGraphPatcher {
 					}
 
 					// HANDLE NATIVE TO JAVA CALLS
-					if(split.length > 12 && type == Constants.JAVA_INVOKEE) {
+					if (split.length > 12 && type == Constants.JAVA_INVOKEE) {
 						String invokeeClass = split[6].trim();
 						String invokeeMethod = split[7].trim();
 						String invokeeSig = split[8].trim();
-						
+
 						pairNewSig = Utils.compactSigtoJimpleSig(invokeeSig);
-						newSig = Utils.toJimpleSignature(invokeeClass, pairNewSig.getValue1(), invokeeMethod, pairNewSig.getValue0());
-						if(!Scene.v().containsMethod(newSig)) {
+						newSig = Utils.toJimpleSignature(invokeeClass, pairNewSig.getValue1(), invokeeMethod,
+								pairNewSig.getValue0());
+						if (!Scene.v().containsMethod(newSig)) {
 							Utils.addPhantomMethod(newSig);
 						}
 						sm = Scene.v().getMethod(newSig);
 
 						String argument_expressions_csv = split[11].trim();
-						argument_expressions_csv = argument_expressions_csv.substring(1, argument_expressions_csv.length() - 1);
-						List<String> argument_expressions = Arrays.asList(argument_expressions_csv.split("\\s*,\\s*")); //https://stackoverflow.com/questions/7488643/how-to-convert-comma-separated-string-to-list
+						argument_expressions_csv = argument_expressions_csv.substring(1,
+								argument_expressions_csv.length() - 1);
+						List<String> argument_expressions = Arrays.asList(argument_expressions_csv.split("\\s*,\\s*")); // https://stackoverflow.com/questions/7488643/how-to-convert-comma-separated-string-to-list
 						List<Ast.Base> parsed_arg_expressions = new ArrayList<Ast.Base>();
-						for(String arg : argument_expressions) {
-							if(!arg.isEmpty()) {
+						for (String arg : argument_expressions) {
+							if (!arg.isEmpty()) {
 								Decoder decoder = Base64.getDecoder();
 								Ast.Base parsed_arg = Ast.Base.parseFrom(decoder.decode(arg));
 								parsed_arg_expressions.add(parsed_arg);
@@ -171,35 +168,38 @@ public class CallGraphPatcher {
 						int cond_n_bits = Integer.parseInt(split[14].trim());
 						String cond_csv = split[15].trim();
 						cond_csv = cond_csv.substring(1, cond_csv.length() - 1);
-						List<String> cond_expressions = Arrays.asList(cond_csv.split("\\s*,\\s*")); //https://stackoverflow.com/questions/7488643/how-to-convert-comma-separated-string-to-list
+						List<String> cond_expressions = Arrays.asList(cond_csv.split("\\s*,\\s*")); // https://stackoverflow.com/questions/7488643/how-to-convert-comma-separated-string-to-list
 						List<Ast.Base> parsed_cond_expressions = new ArrayList<Ast.Base>();
-						for(String cond : cond_expressions) {
-							if(!cond.isEmpty()) {
+						for (String cond : cond_expressions) {
+							if (!cond.isEmpty()) {
 								Decoder decoder = Base64.getDecoder();
 								Ast.Base parsed_cond = Ast.Base.parseFrom(decoder.decode(cond));
 								parsed_cond_expressions.add(parsed_cond);
 							}
 						}
-						
+
 						ConditionalSymbExprTree condTree = nativeContent.get(nativeMethod);
-						if(condTree == null) {
+						if (condTree == null) {
 							condTree = new ConditionalSymbExprTree();
 							nativeContent.put(nativeMethod, condTree);
 						}
-						condTree.addLeaf(cond_bits, cond_n_bits, parsed_cond_expressions, new InvokeEvent(sm, parsed_arg_expressions, return_value_name, this));						
-						
+						condTree.addLeaf(cond_bits, cond_n_bits, parsed_cond_expressions,
+								new InvokeEvent(sm, parsed_arg_expressions, return_value_name, this));
+
 						Pair<ConditionalSymbExprTree, List<SootMethod>> p = nativeToJava.get(target);
-						if(p == null) {
+						if (p == null) {
 							javaTargets = new ArrayList<>();
-							p = new Pair<ConditionalSymbExprTree, List<SootMethod>>(new ConditionalSymbExprTree(), javaTargets);
+							p = new Pair<ConditionalSymbExprTree, List<SootMethod>>(new ConditionalSymbExprTree(),
+									javaTargets);
 							nativeToJava.put(target, p);
 						}
 						javaTargets = p.getValue1();
 						javaTargets.add(sm);
 					}
-					
+
 					// HANDLE NATIVER RETURN VALUES
-					else if (split.length > 9 && type == Constants.RETURN_VALUE && !nativeMethod.getReturnType().equals(VoidType.v())) {
+					else if (split.length > 9 && type == Constants.RETURN_VALUE
+							&& !nativeMethod.getReturnType().equals(VoidType.v())) {
 						Decoder decoder = Base64.getDecoder();
 
 						String ret_value_csv = split[6].trim();
@@ -212,7 +212,7 @@ public class CallGraphPatcher {
 						List<String> cond_expressions = Arrays.asList(cond_csv.split("\\s*,\\s*")); // https://stackoverflow.com/questions/7488643/how-to-convert-comma-separated-string-to-list
 						List<Ast.Base> parsed_cond_expressions = new ArrayList<Ast.Base>();
 						for (String cond : cond_expressions) {
-							if(!cond.isEmpty()) {
+							if (!cond.isEmpty()) {
 								Ast.Base parsed_cond = Ast.Base.parseFrom(decoder.decode(cond));
 								parsed_cond_expressions.add(parsed_cond);
 							}
@@ -226,23 +226,23 @@ public class CallGraphPatcher {
 						condTree.addLeaf(cond_bits, cond_n_bits, parsed_cond_expressions,
 								new ReturnEvent(parsed_ret_value));
 					}
-					
+
 					// HANDLE GET FIELD
-					else if (split.length > 12 && type == Constants.GET_FIELD) {
+					else if (split.length > 12 && type == Constants.GET_FIELD && useJniFIeld) {
 						Decoder decoder = Base64.getDecoder();
-						
+
 						boolean is_static = Boolean.parseBoolean(split[6].trim());
 						String field_name = split[9].trim();
-						
+
 						Ast.Base obj_ptr = Ast.Base.parseFrom(decoder.decode(split[7].trim()));
-						
+
 						GetFieldEvent event;
-						if(is_static) {
+						if (is_static) {
 							event = new GetClassFieldEvent(obj_ptr, split[8].trim(), field_name);
 						} else {
-							event = new GetObjectFieldEvent(obj_ptr, split[8].trim(), field_name);							
+							event = new GetObjectFieldEvent(obj_ptr, split[8].trim(), field_name);
 						}
-						
+
 						int cond_bits = Integer.parseInt(split[10].trim());
 						int cond_n_bits = Integer.parseInt(split[11].trim());
 						String cond_csv = split[12].trim();
@@ -250,7 +250,7 @@ public class CallGraphPatcher {
 						List<String> cond_expressions = Arrays.asList(cond_csv.split("\\s*,\\s*")); // https://stackoverflow.com/questions/7488643/how-to-convert-comma-separated-string-to-list
 						List<Ast.Base> parsed_cond_expressions = new ArrayList<Ast.Base>();
 						for (String cond : cond_expressions) {
-							if(!cond.isEmpty()) {
+							if (!cond.isEmpty()) {
 								Ast.Base parsed_cond = Ast.Base.parseFrom(decoder.decode(cond));
 								parsed_cond_expressions.add(parsed_cond);
 							}
@@ -263,11 +263,11 @@ public class CallGraphPatcher {
 						}
 						condTree.addLeaf(cond_bits, cond_n_bits, parsed_cond_expressions, event);
 					}
-					
+
 					// HANDLE SET FIELD
-					else if (split.length > 12 && type == Constants.SET_FIELD) {
+					else if (split.length > 12 && type == Constants.SET_FIELD && useJniFIeld) {
 						Decoder decoder = Base64.getDecoder();
-						
+
 						boolean is_static = Boolean.parseBoolean(split[6].trim());
 						String field_name = split[9].trim();
 						Ast.Base new_value = Ast.Base.parseFrom(decoder.decode(split[10].trim()));
@@ -275,12 +275,12 @@ public class CallGraphPatcher {
 						Ast.Base obj_ptr = Ast.Base.parseFrom(decoder.decode(split[7].trim()));
 
 						SetFieldEvent event;
-						if(is_static) {
-							event = new SetClassFieldEvent(obj_ptr, split[8].trim(), field_name, new_value);							
+						if (is_static) {
+							event = new SetClassFieldEvent(obj_ptr, split[8].trim(), field_name, new_value);
 						} else {
-							event = new SetObjectFieldEvent(obj_ptr, split[8].trim(), field_name, new_value);								
+							event = new SetObjectFieldEvent(obj_ptr, split[8].trim(), field_name, new_value);
 						}
-						
+
 						int cond_bits = Integer.parseInt(split[11].trim());
 						int cond_n_bits = Integer.parseInt(split[12].trim());
 						String cond_csv = split[13].trim();
@@ -288,7 +288,7 @@ public class CallGraphPatcher {
 						List<String> cond_expressions = Arrays.asList(cond_csv.split("\\s*,\\s*")); // https://stackoverflow.com/questions/7488643/how-to-convert-comma-separated-string-to-list
 						List<Ast.Base> parsed_cond_expressions = new ArrayList<Ast.Base>();
 						for (String cond : cond_expressions) {
-							if(!cond.isEmpty()) {
+							if (!cond.isEmpty()) {
 								Ast.Base parsed_cond = Ast.Base.parseFrom(decoder.decode(cond));
 								parsed_cond_expressions.add(parsed_cond);
 							}
@@ -305,198 +305,217 @@ public class CallGraphPatcher {
 				is.close();
 
 				// GENERATE BINARY NODES THAT ARE JAVA NATIVE CALLS AND INSTRUMENT THE BODY
-				for(Pair<String, SootMethod> p: javaToNative) {
+				for (Pair<String, SootMethod> p : javaToNative) {
 					name = p.getValue0();
 					m = p.getValue1();
-					if(!nodesToMethods.containsKey(name)) {
-						sm = DummyBinaryClass.v().addBinaryMethod(name,
-								m.getReturnType(), m.getModifiers(),
+					if (!nodesToMethods.containsKey(name)) {
+						sm = DummyBinaryClass.v().addBinaryMethod(name, m.getReturnType(), m.getModifiers(),
 								m.getParameterTypes(), !useSymbolicGeneration);
 						nodesToMethods.put(name, sm);
-						for(SootClass sc: Scene.v().getApplicationClasses()) {
-							for(SootMethod met: sc.getMethods()) {
-								if(met.hasActiveBody()) {
+						for (SootClass sc : Scene.v().getApplicationClasses()) {
+							for (SootMethod met : sc.getMethods()) {
+								if (met.hasActiveBody()) {
 									Body b = met.retrieveActiveBody();
 									UnitPatchingChain units = b.getUnits();
 									List<Unit> newUnits = null;
 									Stmt point = null;
-									for(Unit u: units) {
+									for (Unit u : units) {
 										stmt = (Stmt) u;
-										if(stmt.containsInvokeExpr()) {
+										if (stmt.containsInvokeExpr()) {
 											ie = stmt.getInvokeExpr();
-											if(ie.getMethod().equals(m)) {
-												Pair<Local, Pair<List<Unit>, Stmt>> locNewUnits = DummyBinaryClass.v().checkDummyBinaryClassLocalExistence(b, stmt);
+											if (ie.getMethod().equals(m)) {
+												Pair<Local, Pair<List<Unit>, Stmt>> locNewUnits = DummyBinaryClass.v()
+														.checkDummyBinaryClassLocalExistence(b, stmt);
 												Local dummyBinaryClassLocal = locNewUnits.getValue0();
 												Pair<List<Unit>, Stmt> newUnitsPoint = locNewUnits.getValue1();
-												if(newUnitsPoint != null) {
+												if (newUnitsPoint != null) {
 													newUnits = newUnitsPoint.getValue0();
 													point = newUnitsPoint.getValue1();
 												}
-												if(stmt instanceof AssignStmt) {
+												if (stmt instanceof AssignStmt) {
 													AssignStmt as = (AssignStmt) stmt;
-													if(sm.isStatic()) {
-														as.setRightOp(Jimple.v().newStaticInvokeExpr(sm.makeRef(), ie.getArgs()));
-													}else if(sm.isConstructor()){
-														as.setRightOp(Jimple.v().newSpecialInvokeExpr(dummyBinaryClassLocal, sm.makeRef(), ie.getArgs()));
-													}else {
-														as.setRightOp(Jimple.v().newVirtualInvokeExpr(dummyBinaryClassLocal, sm.makeRef(), ie.getArgs()));
+													if (sm.isStatic()) {
+														as.setRightOp(Jimple.v().newStaticInvokeExpr(sm.makeRef(),
+																ie.getArgs()));
+													} else if (sm.isConstructor()) {
+														as.setRightOp(Jimple.v().newSpecialInvokeExpr(
+																dummyBinaryClassLocal, sm.makeRef(), ie.getArgs()));
+													} else {
+														as.setRightOp(Jimple.v().newVirtualInvokeExpr(
+																dummyBinaryClassLocal, sm.makeRef(), ie.getArgs()));
 													}
-												}else if(stmt instanceof InvokeStmt) {
+												} else if (stmt instanceof InvokeStmt) {
 													InvokeStmt ivs = (InvokeStmt) stmt;
-													if(sm.isStatic()) {
-														ivs.setInvokeExpr(Jimple.v().newStaticInvokeExpr(sm.makeRef(), ie.getArgs()));
-													}else if(sm.isConstructor()){
-														ivs.setInvokeExpr(Jimple.v().newSpecialInvokeExpr(dummyBinaryClassLocal, sm.makeRef(), ie.getArgs()));
-													}else {
-														ivs.setInvokeExpr(Jimple.v().newVirtualInvokeExpr(dummyBinaryClassLocal, sm.makeRef(), ie.getArgs()));
+													if (sm.isStatic()) {
+														ivs.setInvokeExpr(Jimple.v().newStaticInvokeExpr(sm.makeRef(),
+																ie.getArgs()));
+													} else if (sm.isConstructor()) {
+														ivs.setInvokeExpr(Jimple.v().newSpecialInvokeExpr(
+																dummyBinaryClassLocal, sm.makeRef(), ie.getArgs()));
+													} else {
+														ivs.setInvokeExpr(Jimple.v().newVirtualInvokeExpr(
+																dummyBinaryClassLocal, sm.makeRef(), ie.getArgs()));
 													}
 												}
 											}
 											// Modify native call to newly generated call + add edge to call-graph
-											if(ie.getMethod().equals(m)) {
+											if (ie.getMethod().equals(m)) {
 												ie.setMethodRef(sm.makeRef());
 												this.cg.addEdge(new Edge(met, stmt, sm));
 												this.newReachableNodes.add(sm);
 												ResultsAccumulator.v().incrementNumberNewJavaToNativeCallGraphEdges();
-												if(!raw) {
-													CustomPrints.pinfo(String.format("Adding java-to-native Edge from %s to %s", met, sm));
+												if (!raw) {
+													CustomPrints.pinfo(String.format(
+															"Adding java-to-native Edge from %s to %s", met, sm));
 												}
 											}
 										}
 									}
-									if(newUnits != null && point != null) {
+									if (newUnits != null && point != null) {
 										units.insertBefore(newUnits, point);
 										b.validate();
 									}
 								}
 							}
 						}
-						
 
-						// Handle Native to Java	
-						if(useSymbolicGeneration) {
+						// Handle Native to Java
+						if (useSymbolicGeneration) {
 							ConditionalSymbExprTree tree = nativeContent.get(m);
-							if(tree != null) {
-								Body b = sm.retrieveActiveBody();					
+							if (tree != null) {
+								Body b = sm.retrieveActiveBody();
 								tree.generateCode(b, b.getUnits().getLast());
 							}
-						}						
-						else {					
+						} else {
 							Pair<ConditionalSymbExprTree, List<SootMethod>> pp = nativeToJava.get(name);
-							javaTargets = pp.getValue1();
-							Unit lastAdded = null,
-									insertPoint = null;
-							if(javaTargets != null && !javaTargets.isEmpty()) {
-								List<Value> return_values = new ArrayList<>(); // List of values returned by the added invocations
-								for(SootMethod met: javaTargets) {
-									Type ret = met.getReturnType();
-									Body b = sm.retrieveActiveBody();
-									Stmt newStmt = null;
-									Local local = null;
-									LocalGenerator lg = new LocalGenerator(b);
-									local = DummyBinaryClass.v().getOrGenerateLocal(b, this.getfirstAfterIdenditiesUnits(b), met.getDeclaringClass().getType());
+							if (pp != null) {
+								javaTargets = pp.getValue1();
+								Unit lastAdded = null, insertPoint = null;
+								if (javaTargets != null && !javaTargets.isEmpty()) {
+									List<Value> return_values = new ArrayList<>(); // List of values returned by the
+																					// added invocations
+									for (SootMethod met : javaTargets) {
+										Type ret = met.getReturnType();
+										Body b = sm.retrieveActiveBody();
+										Stmt newStmt = null;
+										Local local = null;
+										LocalGenerator lg = new LocalGenerator(b);
+										local = DummyBinaryClass.v().getOrGenerateLocal(b,
+												this.getfirstAfterIdenditiesUnits(b),
+												met.getDeclaringClass().getType());
 
-									int paramLength = met.getParameterCount();
-									List<Value> potentialParameters = new ArrayList<Value>();
+										int paramLength = met.getParameterCount();
+										List<Value> potentialParameters = new ArrayList<Value>();
 
-									boolean found;
-									for(Type t: met.getParameterTypes()) {
-										found = false;
-										for(Local l: b.getLocals()) {
-											if(l.getType().equals(t)) {
-												if(!potentialParameters.contains(l)) {
-													potentialParameters.add(l);
-													found = true;
+										boolean found;
+										for (Type t : met.getParameterTypes()) {
+											found = false;
+											for (Local l : b.getLocals()) {
+												if (l.getType().equals(t)) {
+													if (!potentialParameters.contains(l)) {
+														potentialParameters.add(l);
+														found = true;
+													}
+												}
+											}
+											if (!found) {
+												potentialParameters.add(DummyBinaryClass.v().generateLocalAndNewStmt(b,
+														this.getfirstAfterIdenditiesUnits(b), t));
+											}
+										}
+
+										boolean isGoodCombi = true;
+										Permutator<Value> permutator = new Permutator<Value>(potentialParameters,
+												paramLength);
+										for (List<Value> parameters : permutator) {
+											isGoodCombi = true;
+											for (int i = 0; i < paramLength; i++) {
+												if (!parameters.get(i).getType()
+														.equals(met.getParameterTypes().get(i))) {
+													isGoodCombi = false;
+													break;
+												}
+											}
+											// OK NOW ADD OPAQUE PREDICATE
+											if (isGoodCombi) {
+												if (met.isConstructor()) {
+													ie = Jimple.v().newSpecialInvokeExpr(local, met.makeRef(),
+															parameters);
+												} else if (met.isStatic()) {
+													ie = Jimple.v().newStaticInvokeExpr(met.makeRef(), parameters);
+												} else {
+													ie = Jimple.v().newVirtualInvokeExpr(local, met.makeRef(),
+															parameters);
+												}
+												if (ret.equals(VoidType.v())) {
+													newStmt = Jimple.v().newInvokeStmt(ie);
+												} else {
+													local = lg.generateLocal(met.getReturnType());
+													newStmt = Jimple.v().newAssignStmt(local, ie);
+													return_values.add(local);
+												}
+												if (newStmt != null) {
+													if (lastAdded == null) {
+														insertPoint = this.getfirstAfterIdenditiesUnitsAfterInit(b);
+														b.getUnits().insertBefore(newStmt, insertPoint);
+													} else {
+														insertPoint = lastAdded;
+														b.getUnits().insertAfter(newStmt, insertPoint);
+													}
+													lastAdded = newStmt;
+													if (permutator.size() > 1) {
+														DummyBinaryClass.v().addOpaquePredicate(b,
+																b.getUnits().getSuccOf(newStmt), newStmt);
+													}
 												}
 											}
 										}
-										if(!found) {
-											potentialParameters.add(DummyBinaryClass.v().generateLocalAndNewStmt(b, this.getfirstAfterIdenditiesUnits(b), t));
-										}
-									}
 
-									boolean isGoodCombi = true;
-									Permutator<Value> permutator = new Permutator<Value>(potentialParameters, paramLength);
-									for (List<Value> parameters : permutator) {
-										isGoodCombi = true;
-										for(int i = 0 ; i < paramLength ; i++) {
-											if(!parameters.get(i).getType().equals(met.getParameterTypes().get(i))) {
-												isGoodCombi = false;
-												break;
-											}
+										Edge e = new Edge(sm, newStmt, met);
+										this.cg.addEdge(e);
+										this.newReachableNodes.add(met);
+										ResultsAccumulator.v().incrementNumberNewNativeToJavaCallGraphEdges();
+										if (!raw) {
+											CustomPrints.pinfo(
+													String.format("Adding native-to-java Edge from %s to %s", sm, met));
 										}
-										// OK NOW ADD OPAQUE PREDICATE
-										if(isGoodCombi) {
-											if(met.isConstructor()) {
-												ie = Jimple.v().newSpecialInvokeExpr(local, met.makeRef(), parameters);
-											}else if(met.isStatic()) {
-												ie = Jimple.v().newStaticInvokeExpr(met.makeRef(), parameters);
-											}else {
-												ie = Jimple.v().newVirtualInvokeExpr(local, met.makeRef(), parameters);
-											}
-											if(ret.equals(VoidType.v())) {
-												newStmt = Jimple.v().newInvokeStmt(ie);
-											}else {
-												local = lg.generateLocal(met.getReturnType());
-												newStmt = Jimple.v().newAssignStmt(local, ie);
-												return_values.add(local);
-											}
-											if(newStmt != null) {
-												if(lastAdded == null) {
-													insertPoint = this.getfirstAfterIdenditiesUnitsAfterInit(b);
-													b.getUnits().insertBefore(newStmt, insertPoint);
-												}else {
-													insertPoint = lastAdded;
-													b.getUnits().insertAfter(newStmt, insertPoint);
-												}
-												lastAdded = newStmt;
-												if(permutator.size() > 1) {
-													DummyBinaryClass.v().addOpaquePredicate(b, b.getUnits().getSuccOf(newStmt), newStmt);
-												}
-											}
-										}
-									}
 
-									Edge e = new Edge(sm, newStmt, met);
-									this.cg.addEdge(e);
-									this.newReachableNodes.add(met);
-									ResultsAccumulator.v().incrementNumberNewNativeToJavaCallGraphEdges();
-									if(!raw) {
-										CustomPrints.pinfo(String.format("Adding native-to-java Edge from %s to %s", sm, met));
-									}
-									
-									if(!sm.getReturnType().equals(VoidType.v())) {
-										// FIX MULTIPLE RETURN OF SAME TYPE (OPAQUE PREDICATE)
-										final Local retLoc = local;
-										DummyBinaryClass.v().addOpaquePredicateForReturn(b, b.getUnits().getLast(), Jimple.v().newReturnStmt(retLoc));
+										if (!sm.getReturnType().equals(VoidType.v())) {
+											// FIX MULTIPLE RETURN OF SAME TYPE (OPAQUE PREDICATE)
+											final Local retLoc = local;
+											DummyBinaryClass.v().addOpaquePredicateForReturn(b, b.getUnits().getLast(),
+													Jimple.v().newReturnStmt(retLoc));
+										}
 									}
 								}
 							}
 						}
 
 						System.out.println(sm.retrieveActiveBody().toString());
-						// sm.retrieveActiveBody().validate();	
-						// TODO: fallback to no symbolic generation mode when symbolic one outputs an invalid method body
-					}						
+						// sm.retrieveActiveBody().validate();
+						// TODO: fallback to no symbolic generation mode when symbolic one outputs an
+						// invalid method body
+					}
 				}
 
 				// GENERATE BINARY NODES INTO SOOT CALL GRAPH
-				for(MutableNode node: g.nodes()) {
+				for (MutableNode node : g.nodes()) {
 					name = Utils.removeNodePrefix(node.name().toString());
-					if(!nodesToMethods.containsKey(name)) {
-						sm = DummyBinaryClass.v().addBinaryMethod(name, VoidType.v(), Modifier.PUBLIC, new ArrayList<>(), !useSymbolicGeneration);
+					if (!nodesToMethods.containsKey(name)) {
+						sm = DummyBinaryClass.v().addBinaryMethod(name, VoidType.v(), Modifier.PUBLIC,
+								new ArrayList<>(), !useSymbolicGeneration);
 						nodesToMethods.put(name, sm);
 					}
 				}
 
 				// ADD EDGE FROM INITIAL BINARY CALL-GRAPH
-				for(Link l: g.edges()) {
+				for (Link l : g.edges()) {
 					nameFrom = Utils.removeNodePrefix(l.from().name().toString());
 					nameTo = Utils.removeNodePrefix(l.to().name().toString());
 					from = nodesToMethods.get(nameFrom);
 					to = nodesToMethods.get(nameTo);
 					stmt = (Stmt) Utils.addMethodCall(from, to);
-					if(stmt != null) {
+					if (stmt != null) {
 						Edge e = new Edge(from, stmt, to);
 						this.cg.addEdge(e);
 						this.newReachableNodes.add(to);
@@ -505,7 +524,7 @@ public class CallGraphPatcher {
 			}
 
 		} catch (IOException e) {
-			if(!raw) {
+			if (!raw) {
 				CustomPrints.perror(e.getMessage());
 			}
 			System.exit(1);
@@ -517,7 +536,7 @@ public class CallGraphPatcher {
 		Unit u = null;
 		Iterator<Unit> it = units.iterator();
 		u = it.next();
-		while(u instanceof IdentityStmt) {
+		while (u instanceof IdentityStmt) {
 			u = it.next();
 		}
 		return u;
@@ -528,19 +547,19 @@ public class CallGraphPatcher {
 		Unit u = null;
 		Iterator<Unit> it = units.iterator();
 		u = it.next();
-		while(u instanceof IdentityStmt) {
+		while (u instanceof IdentityStmt) {
 			u = it.next();
 		}
 		boolean found = false;
-		while(!found) {
-			if(u instanceof AssignStmt) {
+		while (!found) {
+			if (u instanceof AssignStmt) {
 				AssignStmt as = (AssignStmt) u;
 				Value rop = as.getRightOp();
-				if(rop instanceof NewExpr) {
+				if (rop instanceof NewExpr) {
 					u = it.next();
-					if(u instanceof InvokeStmt) {
+					if (u instanceof InvokeStmt) {
 						InvokeStmt is = (InvokeStmt) u;
-						if(is.getInvokeExpr().getMethod().getSubSignature().equals(Constants.INIT_METHOD_SUBSIG)) {
+						if (is.getInvokeExpr().getMethod().getSubSignature().equals(Constants.INIT_METHOD_SUBSIG)) {
 							u = it.next();
 							continue;
 						}
@@ -556,13 +575,13 @@ public class CallGraphPatcher {
 		DotGraph dg = new DotGraph(Constants.GRAPH_NAME);
 		Iterator<Edge> it = this.cg.iterator();
 		Edge next = null;
-		while(it.hasNext()) {
+		while (it.hasNext()) {
 			next = it.next();
 			dg.drawEdge(next.src().getName(), next.tgt().getName());
 		}
 		dg.plot(destination);
 	}
-	
+
 	public CallGraph getCg() {
 		return this.cg;
 	}
@@ -574,24 +593,24 @@ public class CallGraphPatcher {
 	public void setNewReachableNodes(List<SootMethod> newReachableNodes) {
 		this.newReachableNodes = newReachableNodes;
 	}
-	
+
 	public List<SootMethod> getNewReachableNodesNative() {
 		return getNewReachableNodes(true);
 	}
-	
+
 	public List<SootMethod> getNewReachableNodesJava() {
 		return getNewReachableNodes(false);
 	}
-	
+
 	private List<SootMethod> getNewReachableNodes(boolean b) {
 		List<SootMethod> s = new ArrayList<SootMethod>();
-		for(SootMethod sm: this.newReachableNodes) {
-			if(sm.getDeclaringClass().getType().equals(RefType.v(Constants.DUMMY_BINARY_CLASS)) && b) {
-				if(!s.contains(sm)) {
+		for (SootMethod sm : this.newReachableNodes) {
+			if (sm.getDeclaringClass().getType().equals(RefType.v(Constants.DUMMY_BINARY_CLASS)) && b) {
+				if (!s.contains(sm)) {
 					s.add(sm);
 				}
-			}else if (!sm.getDeclaringClass().getType().equals(RefType.v(Constants.DUMMY_BINARY_CLASS)) && !b){
-				if(!s.contains(sm) && !Utils.wasMethodPreviouslyReachableInCallGraph(cg, sm)) {
+			} else if (!sm.getDeclaringClass().getType().equals(RefType.v(Constants.DUMMY_BINARY_CLASS)) && !b) {
+				if (!s.contains(sm) && !Utils.wasMethodPreviouslyReachableInCallGraph(cg, sm)) {
 					s.add(sm);
 					s.addAll(Utils.wereSuccPreviouslyReachable(cg.edgesOutOf(sm), cg));
 				}
